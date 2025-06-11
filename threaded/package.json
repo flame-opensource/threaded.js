@@ -1,0 +1,17 @@
+{
+  "name": "threaded.js",        // must be unique on npm
+  "version": "1.0",
+  "description": "JavaScript with threads !",
+  "main": "threaded.js",                 // entry point
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flame-opensource/threaded.js.git"
+  },
+  "keywords": ["thread", "threads", "threading", "multithreading", "multitasking", "concurrency", "cooperative"],
+  "author": "Flame <flame.opensource.contact@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flame-opensource/threaded.js/issues"
+  },
+  "homepage": "https://github.com/flame-opensource/threaded.js#readme"
+}
