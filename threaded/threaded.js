@@ -22,6 +22,7 @@
 * SOFTWARE.
 */
 
+/* Version 1.0 */
 class Thread {
     constructor(func, prioritylevel, id) {
         if (Thread.count === undefined) {
@@ -56,6 +57,11 @@ class Thread {
         this.running = false;
         this.stopped = false;
         this.paused = false;
+    }
+
+    setId(id) {
+        this.id = (id === undefined || id === null) ? ('anonymous thread n-' + Thread.count) : (id + ' (thread n-' + Thread.count + ')');
+        return this;
     }
 
     toString() {
@@ -587,7 +593,7 @@ class ThreadGroup {
     }
 
     setId(id) {
-        this.id = id;
+        this.id = (id === undefined || id === null) ? ('anonymous threadgroup n-' + ThreadGroup.count) : (id + ' (threadgroup n-' + ThreadGroup.count + ')');
         return this;
     }
 
