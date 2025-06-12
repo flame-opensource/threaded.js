@@ -21,7 +21,7 @@ threaded.js is a cooperative multitasking framework for JavaScript that enables 
 * Custom thread error handling (using thread.catch(ex), threadgroup.catch(ex, thread) or ThreadExecutor.catch(ex, thread) for global error handling)
 * Custom Thread & ThreadGroup ids for easier debugging (using Thread constructor (func, prioritylevel, id) or using setId function in Thread & ThreadGroup) (ids are set automatically by default)
 ### Installation
-#### Browser :
+#### Browser
 Add the following scripts to your html :
 ```html
 <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
