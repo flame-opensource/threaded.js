@@ -30,17 +30,13 @@ Add the following scripts to your html :
 <script src="https://cdn.jsdelivr.net/npm/threaded.min.js@latest/threaded.min.js"></script>
 ```
 #### Node.js
-Add the following npm packages :
+Install the following npm packages :
 ```
-npm install acorn acorn-walk escodegen-browser threaded.min.js
+npm install acorn acorn-walk escodegen threaded.min.js
 ```
-Then import them into your project :
+Then import threaded.js library into your project :
 ```js
-import * as acorn from 'acorn';
-import * as walk from 'acorn-walk';
-import * as escodegen from 'escodegen-browser';
-import { Thread, ThreadExecutor, ThreadGroup } from 'threaded.min.js';
-acorn.walk = walk;
+const { Thread, ThreadExecutor, ThreadGroup, ThreadError } = require('threaded.min.js');
 ...
 ```
 ### Usage examples
