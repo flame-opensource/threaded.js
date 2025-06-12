@@ -582,9 +582,10 @@ class ThreadGroup {
         this.id = 'anonymous threadgroup n-' + ThreadGroup.count;
     
         if (threads === undefined || threads === null) {
-            throw new ThreadError(this, "threadgroup given threads array is undefined or null");
+            this.threads = [];
+        } else {
+            this.threads = threads;
         }
-        this.threads = threads;
         for (const thread of this.threads) {
             if (thread !== undefined && thread !== null) {
                 thread.__threadgroup__ = this;
