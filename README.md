@@ -27,7 +27,7 @@ Add the following scripts to your html :
 <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/threaded.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/threadedjs@latest/threaded.min.js"></script>
 ```
 #### Node.js
 Add the following npm packages :
