@@ -27,19 +27,19 @@ Add the following scripts to your html :
 <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/threadedjs@latest/threaded.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/threaded.min.js@latest/threaded.min.js"></script>
 ```
 #### Node.js
 Add the following npm packages :
 ```
-npm install acorn acorn-walk escodegen-browser threaded.js
+npm install acorn acorn-walk escodegen-browser threaded.min.js
 ```
 Then import them into your project :
 ```js
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
 import * as escodegen from 'escodegen-browser';
-import { Thread, ThreadExecutor, ThreadGroup } from 'threaded.js';
+import { Thread, ThreadExecutor, ThreadGroup } from 'threaded.min.js';
 acorn.walk = walk;
 ...
 ```
