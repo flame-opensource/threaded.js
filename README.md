@@ -1,6 +1,15 @@
 # threaded.js
 JavaScript with threads !
-### What is threaded.js ?
+## Table of Contents
+- [What is threaded.js](#what-is-threadedjs)
+- [Supported Features](#supported-features-for-now)
+- [Installation](#installation)
+- [Usage Examples](#usage-examples)
+- [How Does It Work](#how-does-it-work)
+- [ThreadGroup](#threadgroup-and-threads-grouping)
+- [Contributing](#contributing)
+- [License](#licence)
+### What is threaded.js
 threaded.js is a cooperative multitasking framework for JavaScript that enables simulated thread-like behavior using generator functions and a cooperative thread scheduler. It provides robust control over asynchronous flows using familiar threading concepts like sleep, pause, resume, stop, and thread grouping.
 ### Supported features (for now)
 * Cooperative execution & concurrency
@@ -14,7 +23,7 @@ threaded.js is a cooperative multitasking framework for JavaScript that enables 
 ### Installation
 #### Browser :
 Add the following scripts to your html :
-```
+```html
 <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
@@ -26,7 +35,7 @@ Add the following npm packages :
 npm install acorn acorn-walk escodegen-browser threaded.js
 ```
 Then import them into your project :
-```
+```js
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
 import * as escodegen from 'escodegen-browser';
@@ -35,7 +44,7 @@ acorn.walk = walk;
 ...
 ```
 ### Usage examples
-```
+```js
 // Thread 1: normal thread
 const thread1 = new Thread(function () {
   console.log("Thread 1: step 1");
@@ -111,12 +120,12 @@ ThreadExecutor.catch((ex, thread) => {
 // Adaptive beat time
 ThreadExecutor.setBeatTime(16); // 60 Beat every second
 ```
-### How does it work ?
+### How does it work
 #### Step 1 : converting functions into stepped functions (generator functions)
 ##### Why ?
 In order to achieve the cooperative design of threads execution (and executes the threads concurrently) we need to execute the given functions step by step (instead of executing them at once) and give each thread priority to execute & run, thats concurrency...
 The only official way to do that is by [yielding](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/yield) control in every step the function runs..., and the function must be a generator function, something like this :
-```
+```js
 function* func() {
     let a = 0; // first operation...
     yield; // yield control...
@@ -131,7 +140,7 @@ threaded.js relies on [acorn](https://github.com/acornjs/acorn), [acorn-walker](
 You see adding yield operators to every single step in the function is so annoying and time consuming..., thats why our library uses those third-party libraries to do that automatically, so you don't have to care about that process, just pass a normal non-native function to the Thread object and the constructor will take care of that task...
 
 So lets say we pass the following function to the Thread constructor :
-```
+```js
 function () {
   console.log("Thread 1: step 1");
   Thread.sleep(500);
@@ -139,7 +148,7 @@ function () {
 }
 ```
 The Thread constructor under the hood will convert the given function into a generator one automatically and save it for later use, it turns something like this :
-```
+```js
 function* () {
     try {
         let __thefunctionstepscount__ = 0;
@@ -163,20 +172,20 @@ Well it has to be some delay in the handler loop in each loop (because of single
 By default the beat time is set to adaptive (ThreadExecutor.ADAPTIVE) that means that the ThreadExecutor calculates how much time it lasted during executing an event outside the threads environment and use that as the new beat time, so its variable and adaptive, that means if it doesn't take so much time outside it loops immediately and vice versa...
 Even though its set by default, but it is recommended to set a custom beat time according to your need (16ms for 60 frame per second rendering for example...), and it is the most recommended to set it to 0 for the highest response rate and wrap everything into threads...
 ##### To set a custom beat time call :
-```
+```js
 ThreadExecutor.setBeatTime(ms);
 ```
-#### Note : Unlike threading in other programming languages, threads here are recycable than means you can start a thread multiple times...
+#### Note : Unlike threading in other programming languages, threads here are recyclable, that means you can start a thread multiple times...
 ### ThreadGroup and threads grouping
 If you want to wrap a bunch of threads into a group and do batch handling, and that what the ThreadGroup class do...
 #### How to use it ?
 You simply create a ThreadGroup object and pass the wrapped threads into its constructor :
-```
+```js
 ThreadGroup threadgroup = new ThreadGroup(thread1, thread2, thread3, ...)
 ...
 ```
 Or you can add or remove the threads later by using the add and remove methods :
-```
+```js
 ...
 threadgroup.add(thread4);
 threadgroup.remove(thread1);
@@ -184,12 +193,12 @@ threadgroup.remove(thread1);
 ```
 and anything you can do to a Thread you can do it to a Threadgroup (start, pause, resume, ...) and it will handle batch handling for you.
 You can set a custom id for it (set automatically) for better debugging :
-```
+```js
 ...
 threadgroup.setId('my threadgroup');
 ...
 ```
-### Wanna contribute ?
+### Contributing
 The project is open source so you can request a change, an update, report bugs or request a new feature...
 ## Licence
 ```
