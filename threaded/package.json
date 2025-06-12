@@ -1,8 +1,8 @@
 {
-  "name": "threaded.js",        // must be unique on npm
+  "name": "threaded.js",
   "version": "1.0",
   "description": "JavaScript with threads !",
-  "main": "threaded.js",                 // entry point
+  "main": "threaded.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/flame-opensource/threaded.js.git"
