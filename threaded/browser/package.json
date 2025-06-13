@@ -1,0 +1,21 @@
+{
+  "name": "threaded.browser.js",
+  "version": "1.0.4",
+  "description": "threaded.js browser version library",
+  "main": "threaded.browser.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flame-opensource/threaded.js.git"
+  },
+  "keywords": [
+    "js", "JavaScript", "node", "node.js", "deno", "deno.js",
+    "thread", "threads", "threading", "multithreading",
+    "multitasking", "concurrency", "cooperative"
+  ],
+  "author": "Flame <flame.opensource.contact@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flame-opensource/threaded.js/issues"
+  },
+  "homepage": "https://github.com/flame-opensource/threaded.js#readme"
+}
