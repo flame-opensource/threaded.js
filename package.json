@@ -1,0 +1,39 @@
+{
+  "name": "threaded.js",
+  "version": "1.0.4",
+  "description": "JavaScript with threads !",
+  "main": "threaded/threaded.module.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flame-opensource/threaded.js.git"
+  },
+  "keywords": [
+    "js",
+    "JavaScript",
+    "node",
+    "node.js",
+    "deno",
+    "deno.js",
+    "thread",
+    "threads",
+    "threading",
+    "multithreading",
+    "multitasking",
+    "concurrency",
+    "cooperative"
+  ],
+  "author": "Flame <flame.opensource.contact@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flame-opensource/threaded.js/issues"
+  },
+  "homepage": "https://github.com/flame-opensource/threaded.js#readme",
+  "dependencies": {
+    "acorn": "^8.15.0",
+    "acorn-walk": "^8.3.4",
+    "escodegen": "^2.1.0",
+    "threaded.min.js": "^1.0.4",
+    "threaded.module.min.js": "^1.0.2",
+    "threaded.node.compat.min.js": "^1.0.0"
+  }
+}

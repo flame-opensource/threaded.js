@@ -61,12 +61,12 @@ Add the following scripts to your html :
 ### Node.js
 Install the following npm packages :
 ```
-npm install acorn acorn-walk escodegen threaded.js threaded.node.compat.js
+npm install acorn acorn-walk escodegen threaded.min.js threaded.node.compat.min.js
 ```
 Then import threaded.js library into your project :
 ```js
-const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('threaded.js');
-const { ThreadedNodeCompat } = require('threaded.node.compat.js');
+const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('threaded.min.js');
+const { ThreadedNodeCompat } = require('threaded.node.compat.min.js');
 ThreadedNodeCompat.supportNode(ThreadedTools);
 ...
 ```
