@@ -56,16 +56,26 @@ Add the following scripts to your html :
 <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/threaded.min.js@latest/threaded.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/browser/threaded.browser.min.js"></script>
 ```
 ### Node.js
 Install the following npm packages :
 ```
-npm install acorn acorn-walk escodegen threaded.min.js
+npm install acorn acorn-walk escodegen threaded.js threaded.node.compat.js
 ```
 Then import threaded.js library into your project :
 ```js
-const { Thread, ThreadExecutor, ThreadGroup, ThreadError } = require('threaded.min.js');
+const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('threaded.js');
+const { ThreadedNodeCompat } = require('threaded.node.compat.js');
+ThreadedNodeCompat.supportNode(ThreadedTools);
+...
+```
+### Deno
+Import threaded.js library into your project :
+```js
+import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/threaded.module.min.js';
+import { ThreadedDenoCompat } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/deno_compat/threaded.deno.compat.min.js';
+ThreadedDenoCompat.supportDeno(ThreadedTools);
 ...
 ```
 
