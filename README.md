@@ -10,6 +10,7 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
 - [API Reference](#api-reference)
   - [Thread](#thread)
   - [ThreadGroup](#threadgroup)
@@ -75,6 +76,146 @@ const t = new Thread(function (name) {
   Thread.sleep(1000);
   console.log("Step 2 complete");
 }).setArgs("Alice").start();
+```
+
+## Usage Examples
+### 1. Simple Thread with an argument and execution result
+```js
+const thread = new Thread(function(name) {
+  console.log(`Starting work for ${name}`);
+  Thread.sleep(1000); // Pause for 1 second
+  console.log("Middle step");
+  Thread.sleep(500);
+  return `Done processing ${name}`;
+}).setArgs("Alice").start();
+
+// Later check the result
+setTimeout(() => {
+  if (thread.done) console.log(thread.result()); // "Done processing Alice"
+}, 2000);
+```
+### 2. Thread Group Management
+```js
+const t1 = new Thread(() => {
+  for (let i = 0; i < 3; i++) {
+    console.log("Thread 1 step", i);
+    Thread.sleep(300);
+  }
+}, Thread.HIGH_PRIORITY_LEVEL);
+
+const t2 = new Thread(() => {
+  for (let i = 0; i < 3; i++) {
+    console.log("Thread 2 step", i);
+    Thread.sleep(500);
+  }
+});
+
+const group = new ThreadGroup(t1, t2)
+  .catch((err, thread) => {
+    console.error(`Error in ${thread.id}:`, err);
+  })
+  .start();
+
+// Pause entire group after 1 second
+group.pauseAfter(1000);
+```
+### 3. Error Handling
+```js
+const riskyThread = new Thread(function() {
+  if (Math.random() > 0.5) throw new Error("Random failure!");
+  return "Success";
+})
+.catch(err => {
+  console.log("Thread failed:", err.message);
+})
+/*.errorSilently(true)*/ // If you don't want the thread errors to bubble up to group or global level
+.start();
+
+// Global error handler
+ThreadExecutor.catch((err, thread) => {
+  console.log(`Global handler caught error from ${thread.id}`);
+});
+```
+## Advanced Generator Function Usage
+### 1. Manual Yield Control
+```js
+const preciseThread = new Thread(function* () {
+  console.log("Step 1");
+  yield; // Explicit yield point
+  
+  for (let i = 0; i < 3; i++) {
+    console.log(`Iteration ${i}`);
+    yield; // Yield after each iteration
+  }
+  
+  const result = yield someGeneratorOperation(); // Can yield other generator functions
+  console.log("result:", result);
+}).start();
+```
+### 2. Custom Generator Function with Thread Recycling
+```js
+function* worker() {
+  while (true) {
+    const job = yield getNextJob(); // Assume this yields
+    console.log("Processing job:", job);
+    yield processJob(job);
+  }
+}
+
+const recyclable = new Thread(worker)
+  .catch(() => {
+    console.log("Worker crashed - restarting");
+    this.start(); // Re-start on error
+  })
+  .start();
+```
+## More & more usage examples
+### 1. Thread Recycling
+```js
+function worker() {
+  throw Error("an error");
+}
+
+const recyclable = new Thread(worker)
+  .catch(() => {
+    console.log("Worker crashed - restarting");
+    this.start(); // Re-start on error
+  })
+  .start();
+```
+### 2. Custom ThreadExecutor Beat Time
+```js
+ThreadExecutor.setBeatTime(16);
+
+new Thread(function() {
+  // With innerfunctionsisolation = true, this won't block
+  function heavyCalculation() {
+    let total = 0;
+    for (let i = 0; i < 1000000; i++) {
+      total += Math.sqrt(i);
+    }
+    return total;
+  }
+  
+  const result = heavyCalculation();
+  console.log("Result:", result);
+}).start();
+```
+### 3. Custom Yield Patterns
+```js
+function* customYieldPattern() {
+  console.log("Start");
+  
+  // Yield every 3 steps
+  for (let i = 0; i < 9; i++) {
+    if (i % 3 === 0) yield;
+    console.log("Processing item", i);
+  }
+  
+  console.log("Done");
+}
+
+new Thread(customYieldPattern).start();
 ```
 
 ## API Reference
