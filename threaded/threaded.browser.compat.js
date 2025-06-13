@@ -1,4 +1,4 @@
-import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'threaded.js';
+import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'https://cdn.jsdelivr.net/gh/flame-opensource/threaded.js@main/threaded/threaded.js';
 
 window.Thread = Thread;
 window.ThreadExecutor = ThreadExecutor;
