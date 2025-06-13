@@ -258,7 +258,7 @@ function worker() {
 
 const recyclable = new Thread(worker)
   .catch(() => {
-    console.log("Worker crashed - restarting");
+    console.log("Thread crashed - restarting");
     this.start(); // Re-start on error
   })
   .start();
