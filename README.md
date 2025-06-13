@@ -1,212 +1,251 @@
 # threaded.js
-JavaScript with threads !
+
+**JavaScript with Threads — Simulated, Structured, Safe.**
+
+---
+
 ## Table of Contents
-- [What is threaded.js](#what-is-threadedjs)
-- [Supported Features](#supported-features-for-now)
+- [Introduction](#introduction)
+- [Core Concepts](#core-concepts)
+- [Features](#features)
 - [Installation](#installation)
-- [Usage Examples](#usage-examples)
-- [How Does It Work](#how-does-it-work)
-- [ThreadGroup](#threadgroup-and-threads-grouping)
+- [Quick Start](#quick-start)
+- [Extended Examples](#extended-examples)
+- [Advanced Use Cases](#advanced-use-cases)
+- [API Reference](#api-reference)
+  - [Thread](#thread)
+  - [ThreadGroup](#threadgroup)
+  - [ThreadExecutor](#threadexecutor)
+  - [Static Thread Utilities](#static-thread-utilities)
+- [Architecture](#architecture)
+- [Inner Function Isolation](#inner-function-isolation)
+- [Silent Mode](#silent-mode)
+- [Custom Generator Functions](#custom-generator-functions)
 - [Contributing](#contributing)
-- [License](#licence)
-### What is threaded.js
-threaded.js is a cooperative multitasking framework for JavaScript that enables simulated thread-like behavior using generator functions and a cooperative thread scheduler. It provides robust control over asynchronous flows using familiar threading concepts like sleep, pause, resume, stop, and thread grouping.
-### Supported features (for now)
-* Cooperative execution & concurrency
-* Basic thread controls (start, stop, pause, resume, sleep), and delayed ones (startAfter, stopAfter, pauseAfter, resumeAfter, sleepAfter)
-* Thread status tracking (started, paused, stopped, paused, running flags)
-* Thread execution priority levels support (Thread.LOW_PRIORITY_LEVEL, Thread.MID_PRIORITY_LEVEL, Thread.HIGH_PRIORITY_LEVEL, or custom value)
-* Thread function arguments (using setArgs(...args) method)
-* Custom thread generator function (just pass a custom generator function to the thread constructor instead of a normal thread and you good to go !), note : yielding is done by you :)
-* Thread grouping (using ThreadGroup class)
-* ThreadExecutor handler loop beat time control (using ThreadExecutor.setBeatTime(time in ms))
-* Adaptive ThreadExecutor handler loop beat time control (using ThreadExecutor.setBeatTime(ThreadExecutor.ADAPTIVE), set by default)
-* Custom thread error handling (using thread.catch(ex), threadgroup.catch(ex, thread) or ThreadExecutor.catch(ex, thread) for global error handling)
-* Custom Thread & ThreadGroup ids for easier debugging (using Thread constructor (func, prioritylevel, id) or using setId function in Thread & ThreadGroup) (ids are set automatically by default)
-* Thread inner functions isolation for better concurrency (set by flag Thread.innerfunctionsisolation, set to true by default)
-* Thread errors isolation, so it only thrown in the thread's catch event and not in a global scope (using thread.errorSilently(flag) method, disabled by default)
-* Execution progress track (using thread.stepsCount() method, returns how much steps got executed)
-* Thread recycling (a thread can be used and started multiple times)
-* Nested threads recycling (using Thread.innerThreadFor(outerThread, func, prioritylevel, id), useful when creating nested threads (thread inside a thread))
-* ThreadExecutor handling and looping status (using ThreadExecutor.handling() & ThreadExecutor.looping() methods, handling if its handling a thread & looping it the handler loop is running)
-### Installation
-#### Browser
-Add the following scripts to your html :
-```html
-<script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/threaded.min.js@latest/threaded.min.js"></script>
-```
-#### Node.js
-Install the following npm packages :
-```
-npm install acorn acorn-walk escodegen threaded.min.js
-```
-Then import threaded.js library into your project :
+- [License](#license)
+
+---
+
+## API Reference
+
+### Thread
+
+#### Constructor
 ```js
-const { Thread, ThreadExecutor, ThreadGroup, ThreadError } = require('threaded.min.js');
-...
+new Thread(function[, priority, id])
 ```
-### Usage examples
+- Accepts either a normal function (converted to generator) or a generator function.
+- `priority`: Optional. Numerical or predefined constant.
+- `id`: Optional. String for debugging purposes.
+
+#### Control Methods
+- `start()` — Begins thread execution.
+- `stop()` — Terminates execution and resets thread state.
+- `pause()` — Temporarily halts execution.
+- `resume()` — Resumes from paused state.
+
+#### Delayed Methods
+- `startAfter(ms)` — Starts the thread after a delay.
+- `pauseAfter(ms)` — Pauses the thread after a delay.
+- `resumeAfter(ms)` — Resumes the thread after a delay.
+- `stopAfter(ms)` — Stops the thread after a delay.
+
+#### Configuration
+- `setArgs(...args)` — Supplies arguments to be passed into the thread function.
+- `result()` — Returns the final value returned by the thread function (once the thread has completed). This is especially useful for retrieving computation outcomes, intermediate results, or passing data back from inner threads. If the thread function throws an error, `result()` will return an instance of `Error`.
+- `setId(id)` — Assigns a custom ID to the thread.
+- `errorSilently(flag)` — Prevents propagation to group/global if true.
+
+#### Observability
+- `stepsCount()` — Number of yield steps executed so far.
+- `started` (Boolean) — Whether the thread was started.
+- `paused` (Boolean) — Whether it is currently paused.
+- `stopped` (Boolean) — Whether the thread was stopped.
+- `running` (Boolean) — Whether it is currently active.
+
+#### Error Handling
+- `catch(fn)` — Assign a thread-local error handler.
+
+---
+
+### ThreadGroup
+
+#### Constructor
 ```js
-// Thread 1: normal thread (threads functions accept arguments !)
-const thread1 = new Thread(function (msg) {
-  console.log("Thread 1: step 1");
-  Thread.sleep(500);
-  console.log(msg)
-  console.log("Thread 1: step 2");
-}).setArgs("hello world").start();
-
-
-// Thread 2: thread with high priority
-const thread2 = new Thread(function () {
-  console.log("Thread 2: high priority start");
-  throw new Error("Oops!");
-}, Thread.HIGH_PRIORITY_LEVEL).start();
-
-
-// Thread 3: thread with custom id and custom priority
-const thread3 = new Thread(function () {
-  console.log("Thread 3: very high priority start");
-}, 10, "high priority thread")/*.setId("high priority thread")*/.start();
-
-
-// Thread 4: Start after delay
-const thread4 = new Thread(function () {
-  console.log("Thread 4: started late");
-}).startAfter(1000);
-
-
-// Thread 5: Pause and resume
-const thread5 = new Thread(function () {
-  console.log("Thread 5: running");
-  Thread.sleep(1000);
-  console.log("Thread 5: resumed");
-}).setId("PausableThread").start();
-
-setTimeout(() => {
-  thread5.pause();
-  console.log("Thread 5 paused");
-}, 200);
-
-setTimeout(() => {
-  thread5.resume();
-  console.log("Thread 5 resumed");
-}, 1200);
-
-
-// ThreadGroup: managing multiple threads
-const group = new ThreadGroup(
-  new Thread(() => {
-    console.log("Group thread 1 start");
-    Thread.sleep(200);
-    console.log("Group thread 1 end");
-  }),
-  new Thread(() => {
-    console.log("Group thread 2 start");
-    Thread.sleep(300);
-    console.log("Group thread 2 end");
-  }),
-  new Thread(() => {
-    Thread.sleep(1000);
-    throw Error("error in a threadgroup thread");
-  }).setId("error thread")
-).setId("MyThreadGroup").catch((ex, thread) => {
-  console.warn(`Error in ${thread.id}:`, ex.message);
-}).start();
-
-
-// Global exception handler
-ThreadExecutor.catch((ex, thread) => {
-  console.warn(`Global catch: Error in thread "${thread?.id}":`, ex.message);
-});
-
-
-// Adaptive beat time
-ThreadExecutor.setBeatTime(16); // 60 Beat every second
+new ThreadGroup(...threads)
 ```
-### How does it work
-#### Step 1 : converting functions into stepped functions (generator functions)
-##### Why ?
-In order to achieve the cooperative design of threads execution (and executes the threads concurrently) we need to execute the given functions step by step (instead of executing them at once) and give each thread priority to execute & run, thats concurrency...
-The only official way to do that is by [yielding](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/yield) control in every step the function runs..., and the function must be a generator function, something like this :
+- Accepts multiple `Thread` instances.
+
+#### Control Methods
+- `start()` / `pause()` / `resume()` / `stop()` — Controls all threads in the group simultaneously.
+
+#### Modifiers
+- `add(thread)` — Adds a thread to the group.
+- `remove(thread)` — Removes a thread from the group.
+
+#### Error Handling
+- `catch((ex, thread) => {})` — Group-level error handler for any member thread.
+
+#### Debugging
+- `setId(id)` — Optional identifier for tracking.
+
+---
+
+### ThreadExecutor
+
+#### Beat Loop Control
+- `setBeatTime(ms | ThreadExecutor.ADAPTIVE)` — Sets beat interval. Default: adaptive.
+
+#### Global Error Handler
+- `catch((ex, thread) => {})` — Catches all uncaught thread errors.
+
+#### Status
+- `handling()` — Returns true if executor is actively dispatching steps.
+- `looping()` — Returns true if beat loop is running.
+
+---
+
+### Thread Configuration & Utility Constants
+
+#### Thread Priority Levels
+- `Thread.LOW_PRIORITY_LEVEL = 1` — Lowest priority. These threads will be scheduled last after all higher-priority and resumed/slept threads have been handled.
+- `Thread.MID_PRIORITY_LEVEL = 2` — Intermediate level. Useful when balancing multiple threads with varying urgency. Balanced execution between low and high priority threads.
+- `Thread.HIGH_PRIORITY_LEVEL = 3` — Highest user-defined priority. These threads are scheduled before lower-priority ones (excluding resumed/slept threads which always take precedence).
+
+During each executor beat, threads are selected for execution based on their priority. Threads with higher values are favored and scheduled earlier. The default priority is `Thread.LOW_PRIORITY_LEVEL = 1`.
+
+However, two special thread states override this system:
+- **Slept threads** (those recovering from `Thread.sleep`) are always prioritized first to ensure accurate wake-up timing.
+- **Paused threads** (that were explicitly paused and resumed) come next, ensuring responsiveness and timely recovery.
+
+Following these, remaining threads are scheduled by priority value. Custom numeric levels can be used for more granular control if needed. in which threads are stepped during each executor beat. Threads with higher values are favored earlier in the scheduling cycle. You may also pass a custom numerical value beyond these three if finer control is needed.
+
+#### `Thread.innerfunctionsisolation`
+- Global flag to enable or disable isolation of inner functions into child threads.
+- **Set to `false` by default**.
+- When enabled (`true`), heavy blocking functions inside a thread (such as infinite loops or long-running computations) are automatically wrapped into separate inner threads.
+- This ensures such operations do not block the main thread scheduler, preserving responsiveness and allowing other threads to continue executing smoothly.
+- When disabled (`false`), all function calls run directly within the main thread’s context, which may cause performance issues if those functions block execution for extended periods. (`false`), all nested function calls are executed in the main thread context, which can lead to blocking if such functions are synchronous or long-running.
+
+#### `Thread.innerThreadFor(parentThread, func[, priority, id])`
+- Wraps `func` into a thread associated with `parentThread`.
+- Useful for thread recycling and safely invoking inner long-running or blocking functions.
+- Ensures isolated execution and result retrieval without blocking the main thread.
+- Enables better control over nested thread flows and error propagation.
+- Example:`func` into a thread associated with `parentThread`.
+- Ensures isolated execution and result retrieval.
+- Example:
 ```js
-function* func() {
-    let a = 0; // first operation...
-    yield; // yield control...
-    a += 5; // second operation...
-    yield; // yield control...
-    // and so on...
+const child = Thread.innerThreadFor(this, func).start();
+```
+
+## Architecture
+
+`threaded.js` operates in two main phases:
+
+### Phase 1: Function Transformation
+All thread functions (non-generator) are parsed into Abstract Syntax Trees (AST) using Acorn, then traversed and modified to inject `yield` statements between logical steps. These are regenerated into generator functions via Escodegen.
+
+This means that you can pass regular-looking code, and `threaded.js` will automatically insert necessary `yield` points for cooperative scheduling. The transformation is skipped for functions already defined as generators.
+
+### Phase 2: Execution Scheduling
+The `ThreadExecutor` loop runs at a configurable beat interval (either fixed or adaptive). It scans all active threads and executes one step per eligible thread in each cycle.
+
+Execution order follows this hierarchy:
+1. Slept threads ready to resume (for time accuracy)
+2. Resumed threads (for responsiveness)
+3. All other threads, ordered by descending priority
+
+This model enables deterministic, cooperative multitasking without blocking the JavaScript event loop.
+
+---
+
+## Inner Function Isolation
+
+When `Thread.innerfunctionsisolation` is enabled, any custom inner function that *can be* blocking (such as infinite loops or CPU-intensive routines) will be isolated and wrapped into a separate inner thread. This ensures the main scheduler loop remains unblocked, allowing all other threads to continue executing smoothly.
+
+The following examples demonstrate how this transformation works:
+
+### Before:
+```js
+() => {
+  while (true) {
+    myfunc(this.id);
+  }
 }
 ```
-##### Used third-party libraries
-threaded.js relies on [acorn](https://github.com/acornjs/acorn), [acorn-walker](https://github.com/acornjs/acorn/tree/master/acorn-walk) and [escodegen](https://github.com/estools/escodegen) to convert the given normal functions in threads into generator functions...
-##### Why using acorn, acorn-walker and escodegen ?
-You see adding yield operators to every single step in the function is so annoying and time consuming..., thats why our library uses those third-party libraries to do that automatically, so you don't have to care about that process, just pass a normal non-native function to the Thread object and the constructor will take care of that task...
 
-So lets say we pass the following function to the Thread constructor :
-```js
-function () {
-  console.log("Thread 1: step 1");
-  Thread.sleep(500);
-  console.log("Thread 1: step 2");
-}
-```
-The Thread constructor under the hood will convert the given function into a generator one automatically and save it for later use, it turns something like this :
+### After:
 ```js
 function* () {
-    try {
-        let __thefunctionstepscount__ = 0;
-        console.log('Thread 1: step 1');
-        yield __thefunctionstepscount__++;
-        Thread.sleep(500);
-        yield __thefunctionstepscount__++;
-        console.log('Thread 1: step 2');
-    } catch (ex) {
-        ThreadExecutor.__threadExceptionOccurred__(ex);
-        return ex;
+  try {
+    let __thefunctionstepscount__ = 0;
+    while (true) {
+      const inner = Thread.innerThreadFor(this, myfunc).setArgs(this.id).errorSilently(true).start();
+      while (inner.running) yield __thefunctionstepscount__;
+      let result = inner.result();
+      if (result instanceof Error) throw new ThreadError(result, inner);
+      yield __thefunctionstepscount__++;
     }
+  } catch (ex) {
+    ThreadExecutor.__threadExceptionOccurred__(ex);
+    return ex;
+  }
 }
 ```
-It yields in every step (except for the return statement or function end) and returns the executing step progress or count for better analysis, and it wraps the function into a try catch block for thread error isolation, exactly what we need for cooperative execution...
-#### Step 2 : Threads scheduling and execution
-Since we have converted the given functions into a stepped ones, all we have to do is to iterate through each created running Thread and execute each one of them step at a time cooperatively, we ignore the slept and paused threads for a while and once they resume we give the slept threads the highest priority for sleep time accuracy, then the paused threads for resuming asap, and then we handle the rest of the threads according to their priority level (1 or Thread.LOW_PRIORITY_LEVEL being the lowest)
-And thats exactly what the ThreadExecutor class do automatically.
-##### Handler loop beat time
-Well it has to be some delay in the handler loop in each loop (because of single-threaded JavaScript nature) to let the outside main events run properly and to not block the main js thread..., and that delay is called the beat time (from heartbeat).
-By default the beat time is set to adaptive (ThreadExecutor.ADAPTIVE) that means that the ThreadExecutor calculates how much time it lasted during executing an event outside the threads environment and use that as the new beat time, so its variable and adaptive, that means if it doesn't take so much time outside it loops immediately and vice versa...
-Even though its set by default, but it is recommended to set a custom beat time according to your need (16ms for 60 frame per second rendering for example...), and it is the most recommended to set it to 0 for the highest response rate and wrap everything into threads...
-##### To set a custom beat time call :
+
+---
+
+## Silent Mode
+
+When `.errorSilently(true)` is called on a thread:
+- Errors thrown in the thread are not propagated to the global or group-level catchers.
+- They are still returned by `.result()`.
+- You may still handle them locally with `.catch()` on the thread.
+
+This is useful when errors are expected or should be handled privately without polluting global error flow.
+
+---
+
+## Custom Generator Functions
+
+You may pass your own generator functions directly into the `Thread` constructor. In this case:
+- No AST transformation occurs
+- You are responsible for using `yield` properly
+
+Example:
 ```js
-ThreadExecutor.setBeatTime(ms);
+new Thread(function* () {
+  yield;
+  console.log("step 1");
+  yield;
+  console.log("step 2");
+}).start();
 ```
-#### Note : Unlike threading in other programming languages, threads here are recyclable, that means you can start a thread multiple times...
-### ThreadGroup and threads grouping
-If you want to wrap a bunch of threads into a group and do batch handling, and that what the ThreadGroup class do...
-#### How to use it ?
-You simply create a ThreadGroup object and pass the wrapped threads into its constructor :
-```js
-ThreadGroup threadgroup = new ThreadGroup(thread1, thread2, thread3, ...)
-...
-```
-Or you can add or remove the threads later by using the add and remove methods :
-```js
-...
-threadgroup.add(thread4);
-threadgroup.remove(thread1);
-...
-```
-and anything you can do to a Thread you can do it to a Threadgroup (start, pause, resume, ...) and it will handle batch handling for you.
-You can set a custom id for it (set automatically) for better debugging :
-```js
-...
-threadgroup.setId('my threadgroup');
-...
-```
-### Contributing
-The project is open source so you can request a change, an update, report bugs or request a new feature...
-## Licence
+
+You can also reference external or inline functions, and `threaded.js` will transform them automatically unless they are native functions.
+
+---
+
+## Contributing
+
+We welcome contributions of all kinds — whether it's reporting bugs, suggesting features, submitting code, or improving documentation.
+
+### Ways to Contribute
+- **Report Bugs**: Found a bug or unexpected behavior? [Open an issue](https://github.com/flame-opensource/threaded.js/issues).
+- **Feature Requests**: Have a use case in mind? Suggest improvements or additions.
+- **Code Contributions**: Fork the repository, make your changes, and open a pull request. Please ensure changes are well-documented and tested.
+- **Documentation Improvements**: Help improve clarity, add examples, or expand technical explanations.
+- **Discussions**: Share feedback, best practices, or ask questions in the discussions tab.
+
+
+
+Thank you for helping make `threaded.js` better! We follow conventional commit messages and encourage consistency across code style. Please include a clear description of your change when submitting a pull request.
+
+---
+
+## License
+
 ```
 MIT License
 
@@ -230,3 +269,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
