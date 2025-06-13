@@ -22,7 +22,25 @@
 * SOFTWARE.
 */
 
-/* Version 1.0 */
+/* Version 1.0.1 */
+
+// For node.js compatibility
+let acornnodejs;
+let escodegennodejs;
+try {
+    acornnodejs = require('acorn');
+    acornnodejs.walk = require('acorn-walk');
+    escodegennodejs = require('escodegen');
+} catch (ex) {
+    // Ignored...
+}
+
+if (acornnodejs !== undefined && acornnodejs !== null &&
+    escodegennodejs !== undefined && escodegennodejs !== null) {
+        acorn = acornnodejs;
+        escodegen = escodegennodejs;
+}
+
 class Thread {
     constructor(func, prioritylevel, id) {
         if (Thread.count === undefined) {
@@ -40,27 +58,68 @@ class Thread {
         this.__stepscount__ = 0;
         if (prioritylevel !== undefined) {
             if (typeof prioritylevel !== 'number') {
-                throw new ThreadError(this, 'thread priority level must be a valid number');
+                throw new ThreadError('thread priority level must be a valid number', this);
             }
             if (! Number.isInteger(prioritylevel)) {
-                throw new ThreadError(this, 'thread priority level must be an integer number');
+                throw new ThreadError('thread priority level must be an integer number', this);
             }
             if (prioritylevel < 0) {
-                throw new ThreadError(this, 'thread priority level must be a positive number');
+                throw new ThreadError('thread priority level must be a positive number', this);
             }
 
             this.prioritylevel = prioritylevel;
         } else {
             this.prioritylevel = (prioritylevel ?? 1) | 1;
         }
+        this.__args__ = [];
+        this.__result__ = null;
+        this.__errorSilently__ = false;
         this.started = false;
         this.running = false;
         this.stopped = false;
         this.paused = false;
     }
 
+    static innerThreadFor(outerThread, func, prioritylevel, id) {
+        if (Thread.__sharedinnerthreads__ === undefined) {
+            Thread.__sharedinnerthreads__ = new Map();
+        }
+
+        if (! Thread.__sharedinnerthreads__.has(outerThread)) {
+            Thread.__sharedinnerthreads__.set(outerThread, new Map());
+        }
+        if (! Thread.__sharedinnerthreads__.get(outerThread).has(func)) {
+            Thread.__sharedinnerthreads__.get(outerThread).set(func, new Thread(func, prioritylevel, id));
+        }
+
+        let thread = Thread.__sharedinnerthreads__.get(outerThread).get(func);
+
+        if (prioritylevel !== undefined) {
+            thread.setPriorityLevel(prioritylevel);
+        }
+        if (id !== undefined) {
+            thread.setId(id);
+        }
+
+        return thread;
+    }
+
     setId(id) {
         this.id = (id === undefined || id === null) ? ('anonymous thread n-' + Thread.count) : (id + ' (thread n-' + Thread.count + ')');
+        return this;
+    }
+
+    setArgs(...args) {
+        this.__args__ = args;
+        return this;
+    }
+
+    errorSilently(flag) {
+        if (flag === undefined || flag === null) {
+            this.__errorSilently__ = false;
+        }
+
+        this.__errorSilently__ = flag;
         return this;
     }
 
@@ -74,13 +133,13 @@ class Thread {
 
     setPriorityLevel(prioritylevel) {
         if (typeof prioritylevel !== 'number') {
-            throw new ThreadError(this, 'thread priority level must be a valid number');
+            throw new ThreadError('thread priority level must be a valid number', this);
         }
         if (! Number.isInteger(prioritylevel)) {
-            throw new ThreadError(this, 'thread priority level must be an integer number');
+            throw new ThreadError('thread priority level must be an integer number', this);
         }
         if (prioritylevel < 0) {
-            throw new ThreadError(this, 'thread priority level must be a positive number');
+            throw new ThreadError('thread priority level must be a positive number', this);
         }
 
         this.prioritylevel = prioritylevel;
@@ -93,10 +152,12 @@ class Thread {
         this.__stepscount__ = 0;
         this.__sleepingpriority__ = false;
         this.__resumingpriority__ = false;
+        this.__result__ = null;
         this.started = true;
         this.paused = false;
         this.stopped = false;
         this.running = true;
+        ThreadExecutor.__timeSpentOutsideThreads__ = undefined;
         ThreadExecutor.queue.push(this);
         if (! ThreadExecutor.isHandling()) {
             ThreadExecutor.handleThreadQueue();
@@ -114,10 +175,28 @@ class Thread {
         return this.stop();
     }
 
+    static interrupt() {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.interrupt called outside a thread environment");
+        }
+
+        currentThread.interrupt();
+    }
+
     interruptAfter(ms) {
         if (! this.paused) this.pause();
         setTimeout(() => this.interrupt(), ms);
         return this;
+    }
+
+    static interruptAfter(ms) {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.interruptAfter called outside a thread environment");
+        }
+
+        currentThread.interruptAfter(ms);
     }
 
     stop() {
@@ -133,15 +212,33 @@ class Thread {
         this.running = false;
         const previousIndex = ThreadExecutor.queue.indexOf(this);
         if (previousIndex === -1) {
-            throw Error("Cannot stop thread \"" + sleptThread.id + ", the thread is not in the execution queue");
+            throw new ThreadError("Cannot stop thread \"" + sleptThread.id + ", the thread is not in the execution queue");
         }
         ThreadExecutor.queue.splice(previousIndex, 1);
         return this;
     }
 
+    static stop() {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.stop called outside a thread environment");
+        }
+
+        currentThread.stop();
+    }
+
     stopAfter(ms) {
         setTimeout(() => this.stop(), ms);
         return this;
+    }
+
+    static stopAfter(ms) {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.stopAfter called outside a thread environment");
+        }
+
+        currentThread.stopAfter(ms);
     }
 
     pause() {
@@ -153,9 +250,27 @@ class Thread {
         return this;
     }
 
+    static pause() {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.pause called outside a thread environment");
+        }
+
+        currentThread.pause();
+    }
+
     pauseAfter(ms) {
         setTimeout(() => this.pause(), ms);
         return this;
+    }
+
+    static pauseAfter(ms) {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.pauseAfter called outside a thread environment");
+        }
+
+        currentThread.pauseAfter(ms);
     }
 
     resume() {
@@ -165,7 +280,7 @@ class Thread {
         }
         const previousIndex = ThreadExecutor.queue.indexOf(this);
         if (previousIndex === -1) {
-            throw Error("Cannot resume thread \"" + sleptThread.id + ", the thread is not in the execution queue");
+            throw new ThreadError("Cannot resume thread \"" + sleptThread.id + ", the thread is not in the execution queue");
         }
 
         this.paused = false;
@@ -175,14 +290,59 @@ class Thread {
         return this;
     }
 
+    static resume() {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.resume called outside a thread environment");
+        }
+
+        currentThread.resume();
+    }
+
     resumeAfter(ms) {
         setTimeout(() => this.resume(), ms);
         return this;
     }
 
+    static resumeAfter(ms) {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.resumeAfter called outside a thread environment");
+        }
+
+        currentThread.resumeAfter(ms);
+    }
+
     sleep(ms) {
-        Thread.__sleepImpl__(this, ms);
+        if (! this.started) {
+            throw new ThreadError("Cannot sleep thread \"" + this.id + ", the thread is not started yet");
+        }
+        if (this.stopped) {
+            throw new ThreadError("Cannot sleep thread \"" + this.id + ", the thread is stopped");
+        }
+        if (! this.running) {
+            throw new ThreadError("Cannot sleep thread \"" + this.id + ", the thread is not running");
+        }
+        if (this.paused) {
+            throw new ThreadError("Cannot sleep thread \"" + this.id + ", the thread is paused");
+        }
+        const previousIndex = ThreadExecutor.queue.indexOf(this);
+        if (previousIndex === -1) {
+            throw new ThreadError("Cannot sleep thread \"" + this.id + ", the thread is not in the execution queue");
+        }
+        this.sleeping = true;
+        this.__sleepingpriority__ = true;
+        setTimeout(() => ThreadExecutor.notifyForSleeping(this, previousIndex), ms);
         return this;
+    }
+
+    static sleep(ms) {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.sleep called outside a thread environment");
+        }
+
+        currentThread.sleep(ms);
     }
 
     sleepAfter(ms) {
@@ -190,45 +350,30 @@ class Thread {
         return this;
     }
 
+    static sleepAfter(ms) {
+        const currentThread = ThreadExecutor.currentThread;
+        if (currentThread === undefined || currentThread === null) {
+            throw new ThreadError("Thread.sleepAfter called outside a thread environment");
+        }
+
+        currentThread.sleepAfter(ms);
+    }
+
     catch(exceptionFunc) {
         this.__exceptionFunc__ = exceptionFunc;
         return this;
     }
 
-    static sleep(ms) {
-        const sleptThread = ThreadExecutor.currentThread;
-        if (sleptThread === undefined || sleptThread === null) {
-            throw Error("Thread.sleep called outside a thread environment");
-        }
-        Thread.__sleepImpl__(sleptThread, ms);
-    }
-
-    static __sleepImpl__(sleptThread, ms) {
-        if (! sleptThread.started) {
-            throw Error("Cannot sleep thread \"" + sleptThread.id + ", the thread is not started yet");
-        }
-        if (sleptThread.stopped) {
-            throw Error("Cannot sleep thread \"" + sleptThread.id + ", the thread is stopped");
-        }
-        if (! sleptThread.running) {
-            throw Error("Cannot sleep thread \"" + sleptThread.id + ", the thread is not running");
-        }
-        if (sleptThread.paused) {
-            throw Error("Cannot sleep thread \"" + sleptThread.id + ", the thread is paused");
-        }
-        const previousIndex = ThreadExecutor.queue.indexOf(sleptThread);
-        if (previousIndex === -1) {
-            throw Error("Cannot sleep thread \"" + sleptThread.id + ", the thread is not in the execution queue");
-        }
-        sleptThread.sleeping = true;
-        sleptThread.__sleepingpriority__ = true;
-        setTimeout(() => ThreadExecutor.notifyForSleeping(sleptThread, previousIndex), ms);
+    result() {
+        return this.__result__;
     }
 }
 
 Thread.LOW_PRIORITY_LEVEL = 1;
 Thread.MID_PRIORITY_LEVEL = 2;
 Thread.HIGH_PRIORITY_LEVEL = 3;
+
+Thread.innerfunctionsisolation = false;
 
 class ThreadExecutor {
     static handleThreadQueue() {
@@ -243,6 +388,8 @@ class ThreadExecutor {
 
         ThreadExecutor.__isHandling__ = false;
 
+        ThreadExecutor.__timeSpentOutsideThreads__ = undefined;
+
         ThreadExecutor.queueIndex = 0;
 
         ThreadExecutor.handlerLoop(false);
@@ -250,11 +397,11 @@ class ThreadExecutor {
 
     static handlerLoop(calledFromNotification) {
         if (ThreadExecutor.__timeSpentOutsideThreads__ !== undefined) {
-            let now = new Date();
-            ThreadExecutor.__timeSpentOutsideThreads__ = now - ThreadExecutor.__timeSpentOutsideThreads__ + 5;
+            ThreadExecutor.__timeSpentOutsideThreads__ = Date.now() - ThreadExecutor.__timeSpentOutsideThreads__;
         } else {
-            ThreadExecutor.__timeSpentOutsideThreads__ = 20;
+            ThreadExecutor.__timeSpentOutsideThreads__ = 10;
         }
+        ThreadExecutor.__timeSpentOutsideThreads__ = Math.min(ThreadExecutor.__timeSpentOutsideThreads__, 20);
 
         if (! calledFromNotification) if (ThreadExecutor.__isHandling__) {
             return;
@@ -272,14 +419,14 @@ class ThreadExecutor {
             thread.__resumingpriority__ = false;
 
             if (thread.__generator__ === undefined) {
-                thread.__generator__ = thread.__generatorFunc__();
+                thread.__generator__ = thread.__generatorFunc__(...thread.__args__);
             }
             const result = thread.__generator__.next();
             thread.__stepscount__ = typeof result.value === 'number' ? result.value : thread.__stepscount__;
 
             if (!(result instanceof Error) && result.done === true) {
-                thread.__stepscount__++; // for return step
                 ThreadExecutor.queue.splice(ThreadExecutor.queueIndex, 1);
+                thread.__result__ = result.value;
                 thread.stopped = true;
                 thread.running = false;
                 thread.__sleepingpriority__ = false;
@@ -299,8 +446,8 @@ class ThreadExecutor {
         }
 
         if (ThreadExecutor.queue.length !== 0) {
-            setTimeout(() => ThreadExecutor.handlerLoop(false), (ThreadExecutor.__loopingbeattime__ === undefined || ThreadExecutor.__loopingbeattime__ === -1) ? ThreadExecutor.__timeSpentOutsideThreads__ : ThreadExecutor.__loopingbeattime__);
-            ThreadExecutor.__timeSpentOutsideThreads__ = new Date();
+            setTimeout(() => ThreadExecutor.handlerLoop(false), (ThreadExecutor.__loopingbeattime__ === undefined || ThreadExecutor.__loopingbeattime__ === ThreadExecutor.ADAPTIVE) ? ThreadExecutor.__timeSpentOutsideThreads__ : ThreadExecutor.__loopingbeattime__);
+            ThreadExecutor.__timeSpentOutsideThreads__ = Date.now();
         } else {
             ThreadExecutor.__isLooping__ = false;
         }
@@ -339,6 +486,8 @@ class ThreadExecutor {
 
         sleptThread.sleeping = false;
 
+        ThreadExecutor.__timeSpentOutsideThreads__ = undefined;
+
         if (! ThreadExecutor.isLooping()) {
             ThreadExecutor.handleThreadQueue();
         } else {
@@ -355,6 +504,8 @@ class ThreadExecutor {
                 break;
             }
         }
+
+        ThreadExecutor.__timeSpentOutsideThreads__ = undefined;
 
         if (! ThreadExecutor.isLooping()) {
             ThreadExecutor.handleThreadQueue();
@@ -377,6 +528,8 @@ class ThreadExecutor {
 
         ThreadExecutor.queue = ThreadExecutor.queue.slice(0, start).concat(ThreadExecutor.queue.slice(start, ThreadExecutor.queue.length).sort((a, b) => ((a.prioritylevel ?? 1) | 1) - ((b.prioritylevel ?? 1) | 1)));
     
+        ThreadExecutor.__timeSpentOutsideThreads__ = undefined;
+
         if (! ThreadExecutor.isLooping()) {
             ThreadExecutor.handleThreadQueue();
         } else {
@@ -394,11 +547,13 @@ class ThreadExecutor {
             return;
         }
 
-        ex = new ThreadError(ThreadExecutor.currentThread, ex);
+        ex = new ThreadError(ex, ThreadExecutor.currentThread);
 
         let noExceptionFuncIsSet = false;
         if (ThreadExecutor.__globalExceptionFunc__ !== undefined && ThreadExecutor.__globalExceptionFunc__ !== null) {
-            ThreadExecutor.__globalExceptionFunc__(ex, ThreadExecutor.currentThread);
+            if (! ThreadExecutor.currentThread.__errorSilently__) {
+                ThreadExecutor.__globalExceptionFunc__(ex, ThreadExecutor.currentThread);
+            }
         } else {
             noExceptionFuncIsSet = true;
         }
@@ -409,7 +564,9 @@ class ThreadExecutor {
                     if (ThreadExecutor.currentThread.__threadgroup__.__exceptionFunc__ !== undefined &&
                         ThreadExecutor.currentThread.__threadgroup__.__exceptionFunc__ !== null) {
                         noExceptionFuncIsSet = false;
-                        ThreadExecutor.currentThread.__threadgroup__.__exceptionFunc__(ex, ThreadExecutor.currentThread);
+                        if (! ThreadExecutor.currentThread.__errorSilently__) {
+                            ThreadExecutor.currentThread.__threadgroup__.__exceptionFunc__(ex, ThreadExecutor.currentThread);
+                        }
                     }
             }
 
@@ -420,33 +577,75 @@ class ThreadExecutor {
             }
             
             if (noExceptionFuncIsSet) {
-                console.error(ex);
+                if (! ThreadExecutor.currentThread.__errorSilently__) {
+                    console.error(ex);
+                }
             }
         }
     }
 
     static __generatorFunc__(func) {
         let functionSource = `(${func.toString()})`;
-        if (functionSource === null) throw Error("Failed to retrieve the function source code");
-        if (functionSource.includes("[native code]")) throw Error("Can't execute native function \"" + functionSource + "\", the thread function has to be a normal function, try to wrap the function into a normal function instead...");
+        if (functionSource === null) throw new ThreadError("Failed to retrieve the function source code");
+        if (ThreadExecutor.__isNativeFunction__(func)) throw new ThreadError("Can't execute native function \"" + functionSource + "\", the thread function has to be a normal function, try to wrap the function into a normal function instead...");
         
         // Parse the source into an AST
-        const ast = acorn.parse(functionSource, { ecmaVersion: 2020 });
+        const ast = acorn.parse(functionSource, { ecmaVersion: 2024 });
+
+        let alreadyAGeneratorFunction = typeof func === 'function' &&
+                                        func.constructor &&
+                                        func.constructor.name === 'GeneratorFunction';
+        if (alreadyAGeneratorFunction) return func;
 
         acorn.walk.full(ast, (node) => {
             // Inject `yield` after each statement in function body or block
+            let functionId = 0;
             if (
                 node.type === 'BlockStatement'
             ) {
                 const newBody = [];
                 for (let i = 0; i < node.body.length; i++) {
                     const stmt = node.body[i];
-                    newBody.push(stmt);
-                    if (i < node.body.length - 1 &&
-                        stmt.type !== 'ReturnStatement' &&
-                        stmt.type !== 'ContinueStatement' &&
-                        stmt.type !== 'BreakStatement' &&
-                        stmt.type !== 'ThrowStatement') {
+
+                    if (Thread.innerfunctionsisolation === true &&
+                        (stmt.type === 'VariableDeclaration' ||
+                        stmt.type === 'ExpressionStatement')) {
+                        const originalVarName = stmt.type === 'VariableDeclaration' ?
+                            stmt.declarations[0].id.name :
+                            null;
+                        const callExpr = stmt.type === 'VariableDeclaration' ?
+                            stmt.declarations[0].init :
+                            stmt.expression;
+
+                        let functionCallee = null;
+                        let isNativeOrThreadFunction = false;
+                        let dontIsolateToThread = false;
+                        if (callExpr.type === 'ArrowFunctionExpression') {
+                            for (const declarator of stmt.declarations) {
+                                if (declarator.type === 'VariableDeclarator' && declarator.id.type === 'Identifier') {
+                                    const varName = declarator.id.name;
+                                    functionCallee = {
+                                        type: 'Identifier',
+                                        name: varName
+                                    };
+                                }
+                            }
+                            isNativeOrThreadFunction = ThreadExecutor.__isNativeOrThreadFunction__(eval('(' + escodegen.generate(callExpr) + ')'.replaceAll('this', 'Thread')));     
+                            dontIsolateToThread = true;
+                        } else {
+                            functionCallee = callExpr.callee;
+                            if (functionCallee !== undefined && functionCallee !== null) try {
+                                isNativeOrThreadFunction = ThreadExecutor.__isNativeOrThreadFunction__(eval(escodegen.generate(functionCallee).replaceAll('this', 'Thread')));
+                            } catch(ex) {
+                                if (!(ex instanceof ReferenceError)) {
+                                    throw ex;
+                                }
+                            }
+                            dontIsolateToThread = callExpr.type !== 'CallExpression';
+                        }
+
+                        if (isNativeOrThreadFunction || dontIsolateToThread) {
+                            newBody.push(stmt);
                             newBody.push({
                                 type: 'ExpressionStatement',
                                 expression: {
@@ -462,6 +661,209 @@ class ThreadExecutor {
                                     }
                                 }
                             });
+
+                            continue;
+                        }
+
+                        if (! dontIsolateToThread) {
+                            const threadVar = `__innerfunctionexecutor${++functionId}__`;
+                            const tempVarName = `__innerfunctionexecutionresult${functionId}__`;
+                            newBody.push(
+                               // const __innerfunctionexecutorN__ = new Thread(FUNCTIONAME).setArgs(...args).setId(this.id + ''s inner thread').errorSilently(true).start();
+                               {
+                                    type: 'VariableDeclaration',
+                                    kind: 'const',
+                                    declarations: [{
+                                        type: 'VariableDeclarator',
+                                        id: { type: 'Identifier', name: threadVar },
+                                        init: {
+                                            type: 'CallExpression',
+                                            callee: {
+                                                type: 'MemberExpression',
+                                                object: {
+                                                    type: 'CallExpression',
+                                                    callee: {
+                                                        type: 'MemberExpression',
+                                                        object: {
+                                                            type: 'CallExpression',
+                                                            callee: {
+                                                                type: 'MemberExpression',
+                                                                object: {
+                                                                    type: 'CallExpression',
+                                                                    callee: {
+                                                                        type: 'MemberExpression',
+                                                                        object: {
+                                                                            type: 'CallExpression',
+                                                                            callee: {
+                                                                                type: 'MemberExpression',
+                                                                                object: { type: 'Identifier', name: 'Thread' },
+                                                                                property: { type: 'Identifier', name: 'innerThreadFor' },
+                                                                                computed: false,
+                                                                                optional: false
+                                                                            },
+                                                                            arguments: [
+                                                                                { type: 'ThisExpression' },
+                                                                                functionCallee]
+                                                                        },
+                                                                        property: { type: 'Identifier', name: 'setId' },
+                                                                        computed: false,
+                                                                        optional: false
+                                                                    },
+                                                                    arguments: [
+                                                                        {
+                                                                            type: 'BinaryExpression',
+                                                                            operator: '+',
+                                                                            left: {
+                                                                                type: 'MemberExpression',
+                                                                                object: { type: 'ThisExpression' },
+                                                                                property: { type: 'Identifier', name: 'id' },
+                                                                                computed: false,
+                                                                                optional: false
+                                                                            },
+                                                                            right: {
+                                                                                type: 'Literal',
+                                                                                value: "'s inner thread",
+                                                                                raw: "'s inner thread"
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                property: { type: 'Identifier', name: 'setArgs' },
+                                                                computed: false,
+                                                                optional: false
+                                                            },
+                                                            arguments: callExpr.arguments
+                                                        },
+                                                        property: { type: 'Identifier', name: 'errorSilently' },
+                                                        computed: false,
+                                                        optional: false
+                                                    },
+                                                    arguments: [
+                                                        {
+                                                            type: 'Literal',
+                                                            value: true,
+                                                            raw: 'true'
+                                                        }
+                                                    ]
+                                                },
+                                                property: { type: 'Identifier', name: 'start' },
+                                                computed: false,
+                                                optional: false
+                                            },
+                                            arguments: []
+                                        }
+                                    }]
+                                },
+                                // while (__innerfunctionexecutorN__.running) { yield __thefunctionstepscount__; }
+                                {
+                                    type: 'WhileStatement',
+                                    test: {
+                                        type: 'MemberExpression',
+                                        object: { type: 'Identifier', name: threadVar },
+                                        property: { type: 'Identifier', name: 'running' }
+                                    },
+                                    body: {
+                                        type: 'BlockStatement',
+                                        body: [{
+                                            type: 'ExpressionStatement',
+                                            expression: {
+                                                type: 'YieldExpression',
+                                                argument: {
+                                                    type: 'Identifier',
+                                                    name: '__thefunctionstepscount__'
+                                                }
+                                            }
+                                        }]
+                                    }
+                                },
+                                // let ORIGINALVARNAME = __innerfunctionexecutorN__.result();
+                                // Or ; for non retuning function
+                                {
+                                    type: 'VariableDeclaration',
+                                    kind: 'let',
+                                    declarations: [{
+                                        type: 'VariableDeclarator',
+                                        id: { type: 'Identifier', name: originalVarName !== null ? originalVarName : tempVarName },
+                                        init: {
+                                            type: 'CallExpression',
+                                            callee: {
+                                                type: 'MemberExpression',
+                                                object: { type: 'Identifier', name: threadVar },
+                                                property: { type: 'Identifier', name: 'result' }
+                                            },
+                                            arguments: []
+                                        }
+                                    }]
+                                },
+                                // yield __thefunctionstepscount__++;
+                                {
+                                    type: 'ExpressionStatement',
+                                    expression: {
+                                        type: 'YieldExpression',
+                                        argument: {
+                                            type: 'UpdateExpression',
+                                            operator: '++',
+                                            argument: {
+                                                type: 'Identifier',
+                                                name: '__thefunctionstepscount__'
+                                            },
+                                            prefix: false
+                                        }
+                                    }
+                                },
+                                {
+                                    type: 'IfStatement',
+                                    test: {
+                                        type: 'BinaryExpression',
+                                        operator: 'instanceof',
+                                        left: { type: 'Identifier', name: originalVarName !== null ? originalVarName : tempVarName },
+                                        right: { type: 'Identifier', name: 'Error' }
+                                    },
+                                    consequent: {
+                                        type: 'BlockStatement',
+                                        body: [
+                                            {
+                                                type: 'ThrowStatement',
+                                                argument: {
+                                                    type: 'NewExpression',
+                                                    callee: { type: 'Identifier', name: 'ThreadError' },
+                                                    arguments: [
+                                                        { type: 'Identifier', name: originalVarName !== null ? originalVarName : tempVarName },
+                                                        {
+                                                            type: 'VariableDeclarator',
+                                                            id: { type: 'Identifier', name: threadVar }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    alternate: null
+                                }
+                            );
+                        }
+                    } else {
+                        newBody.push(stmt);
+                        if (stmt.type !== 'ReturnStatement' &&
+                            stmt.type !== 'ContinueStatement' &&
+                            stmt.type !== 'BreakStatement' &&
+                            stmt.type !== 'ThrowStatement') {
+                            newBody.push({
+                                type: 'ExpressionStatement',
+                                expression: {
+                                    type: 'YieldExpression',
+                                    argument: {
+                                        type: 'UpdateExpression',
+                                        operator: '++',
+                                        argument: {
+                                            type: 'Identifier',
+                                            name: '__thefunctionstepscount__'
+                                        },
+                                        prefix: false
+                                    }
+                                }
+                            });
+                        }
                     }
                 }
                 node.body = newBody;
@@ -471,12 +873,12 @@ class ThreadExecutor {
 
         acorn.walk.simple(ast, {
             FunctionDeclaration(node) {
+                if (! node.generator) ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, true);
                 node.generator = true;
-                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node);
             },
             FunctionExpression(node) {
+                if (! node.generator) ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, true);
                 node.generator = true;
-                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node);
             },
             ArrowFunctionExpression(node) {
                 // Wrap if it's not a block body
@@ -484,11 +886,10 @@ class ThreadExecutor {
                     ThreadExecutor.__wrapArrowFunctionInBlockStatement__(node);
                 }
 
+                if (! node.generator) ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, true);
                 node.type = 'FunctionExpression';
                 node.generator = true;
                 node.expression = false;
-                
-                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node);
             }
         });
 
@@ -498,6 +899,16 @@ class ThreadExecutor {
         // Eval into an actual generator function
         let generatorFunc = eval(newCode);
         return generatorFunc;
+    }
+
+    static __isNativeFunction__(fn) {
+        if (fn === undefined) return false;
+        return typeof fn === 'function' && /\{\s*\[native code\]\s*\}/.test(fn.toString());
+    }
+
+    static __isNativeOrThreadFunction__(fn) {
+        if (fn === undefined) return false;
+        return ThreadExecutor.__isNativeFunction__(fn) || Thread.prototype.hasOwnProperty(fn.name);
     }
 
     static __wrapArrowFunctionInBlockStatement__(node) {
@@ -517,7 +928,7 @@ class ThreadExecutor {
         }
     }
 
-    static __wrapFunctionBodyInTryCatch__(node) {
+    static __wrapFunctionBodyInTryCatch__(node, addfunctionstepscountvar) {
         const originalBody = node.body.body;
 
         node.body.body = [
@@ -526,7 +937,7 @@ class ThreadExecutor {
                 block: {
                     type: "BlockStatement",
                     body: [
-                        {
+                        addfunctionstepscountvar === true ? {
                             type: 'VariableDeclaration',
                             declarations: [
                             {
@@ -536,7 +947,9 @@ class ThreadExecutor {
                             }
                             ],
                                 kind: 'let'
-                        },
+                        } : {
+                                type: 'EmptyStatement'
+                            },
                         ...originalBody
                     ]
                 },
@@ -600,7 +1013,7 @@ class ThreadGroup {
 
     add(thread) {
         if (thread === undefined || thread === null) {
-            throw new ThreadError(this, "Given thread in threadgroup add function is undefined or null");
+            throw new ThreadError("Given thread in threadgroup add function is undefined or null", this);
         }
 
         this.threads.push(thread);
@@ -625,7 +1038,7 @@ class ThreadGroup {
 
     stepsCount() {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         let totalStepsCount = 0;
@@ -640,7 +1053,7 @@ class ThreadGroup {
 
     start() {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         for (const thread of this.threads) {
@@ -653,7 +1066,7 @@ class ThreadGroup {
 
     startAfter(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         this.pause();
@@ -663,7 +1076,7 @@ class ThreadGroup {
 
     interrupt() {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         return this.stop();
@@ -671,7 +1084,7 @@ class ThreadGroup {
 
     interruptAfter(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         setTimeout(() => this.interrupt(), ms);
@@ -680,7 +1093,7 @@ class ThreadGroup {
 
     stop() {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         for (const thread of this.threads) {
@@ -693,7 +1106,7 @@ class ThreadGroup {
 
     stopAfter(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         setTimeout(() => this.stop(), ms);
@@ -702,7 +1115,7 @@ class ThreadGroup {
 
     pause() {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
         
         for (const thread of this.threads) {
@@ -715,7 +1128,7 @@ class ThreadGroup {
 
     pauseAfter(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         setTimeout(() => this.pause(), ms);
@@ -724,7 +1137,7 @@ class ThreadGroup {
 
     resume() {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         for (const thread of this.threads) {
@@ -737,7 +1150,7 @@ class ThreadGroup {
 
     resumeAfter(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         setTimeout(() => this.resume(), ms);
@@ -746,7 +1159,7 @@ class ThreadGroup {
 
     sleep(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
 
         for (const thread of this.threads) {
@@ -759,7 +1172,7 @@ class ThreadGroup {
 
     sleepAfter(ms) {
         if (this.threads.length == 0) {
-            throw new ThreadError(this, "threadgroup has no threads");
+            throw new ThreadError("threadgroup has no threads", this);
         }
         
         setTimeout(() => this.sleep(), ms);
@@ -773,7 +1186,14 @@ class ThreadGroup {
 }
 
 class ThreadError extends Error {
-    constructor(thread, message) {
-        super((thread instanceof Thread ? "error in thread " : "error in threadgroup ") + "\"" + thread.id + "\"" + ", details : " + message, message);
+    constructor(message, thread) {
+        super((thread instanceof Thread ? "error in thread " : "error in threadgroup ") + "\"" + thread.id + "\"" + ", details : " + message, message instanceof Error ? message : undefined);
     }
+}
+
+// For node.js compatibility
+try {
+    module.exports = { Thread, ThreadGroup, ThreadExecutor, ThreadError };
+} catch (ex) {
+    // Ignored...
 }
