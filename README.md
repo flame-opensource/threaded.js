@@ -10,13 +10,11 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Extended Examples](#extended-examples)
-- [Advanced Use Cases](#advanced-use-cases)
 - [API Reference](#api-reference)
   - [Thread](#thread)
   - [ThreadGroup](#threadgroup)
   - [ThreadExecutor](#threadexecutor)
-  - [Static Thread Utilities](#static-thread-utilities)
+  - [Thread Configurations and Utilities](#thread-configurations-and-utilities)
 - [Architecture](#architecture)
 - [Inner Function Isolation](#inner-function-isolation)
 - [Silent Mode](#silent-mode)
@@ -25,6 +23,59 @@
 - [License](#license)
 
 ---
+
+## Introduction
+threaded.js is a cooperative threading framework for JavaScript that simulates concurrency using generator functions. It allows developers to pause, resume, sleep, and prioritize functions as if they were true OS threads — all while staying in JavaScript’s single-threaded event loop.
+
+## Core Concepts
+Cooperative Multitasking using generator functions : Threads yield control voluntarily after each step.
+
+## Features
+* Cooperative execution model (yield-based)
+* Full control over threads: start, stop, pause, resume, sleep
+* Delayed operations: startAfter, pauseAfter, etc.
+* Adaptive or fixed beat loop (ThreadExecutor.setBeatTime)
+* Thread prioritization: LOW, MID, HIGH, or custom
+* Thread recycling: restart any thread after it finishes
+* Function argument passing (setArgs(...))
+* Nesting threads within other threads
+* Thread and group identifiers for easier debugging
+* Fine-grained error handling at thread, group, or global level
+* Execution progress tracking via stepsCount()
+* Inner-function isolation toggle (Thread.innerfunctionsisolation)
+* Silent error mode (errorSilently(true)
+* AST Transformation: Normal functions are transformed into generator functions at runtime using acorn, acorn-walk, and escodegen.
+* Thread Groups: Manage multiple threads together for batch operations.
+* Thread Executor: Global scheduler with beat-time-based loop and adaptive execution.
+
+## Installation
+### Browser :
+Add the following scripts to your html :
+```html
+<script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/threaded.min.js@latest/threaded.min.js"></script>
+```
+### Node.js
+Install the following npm packages :
+```
+npm install acorn acorn-walk escodegen threaded.min.js
+```
+Then import threaded.js library into your project :
+```js
+const { Thread, ThreadExecutor, ThreadGroup, ThreadError } = require('threaded.min.js');
+...
+```
+
+## Quick Start
+```js
+const t = new Thread(function (name) {
+  console.log(`Hello ${name}, step 1`);
+  Thread.sleep(1000);
+  console.log("Step 2 complete");
+}).setArgs("Alice").start();
+```
 
 ## API Reference
 
@@ -105,7 +156,7 @@ new ThreadGroup(...threads)
 
 ---
 
-### Thread Configuration & Utility Constants
+### Thread Configurations and Utilities
 
 #### Thread Priority Levels
 - `Thread.LOW_PRIORITY_LEVEL = 1` — Lowest priority. These threads will be scheduled last after all higher-priority and resumed/slept threads have been handled.
