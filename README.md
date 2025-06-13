@@ -1,6 +1,6 @@
 # threaded.js
 
-**JavaScript with Threads — Simulated, Structured, Safe.**
+**JavaScript with Threads !**
 
 ---
 
