@@ -297,6 +297,21 @@ function* customYieldPattern() {
 
 new Thread(customYieldPattern).start();
 ```
+### 4. Thread controls outside thread context
+```js
+function anOutsiderFunction() {
+  // Since this function is executed inside the thread
+  // Thread controls can be called here safely
+  // Using static methods
+  Thread.sleep(1000); // You can sleep...
+  Thread.sleepAfter(1000, 1000); // You can sleep after a delay...
+  Thread.resumeAfter(1000); // You can resume after a delay...
+  Thread.pause(); // You can sleep after a delay...
+  // and so on...
+}
+
+new Thread(anOutsiderFunction).start();
+```
 
 ## API Reference
 
