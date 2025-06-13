@@ -94,7 +94,17 @@ setTimeout(() => {
   if (thread.done) console.log(thread.result()); // "Done processing Alice"
 }, 2000);
 ```
-### 2. Thread Group Management
+### 2. Thread with custom priority
+```js
+const thread = new Thread(function() {
+  Thread.sleep(1000); // Pause for 1 second
+  console.log("Beat");
+}, Thread.MID_PRIORITY_LEVEL)
+/*.setPriorityLevel(Thread.HIGH_PRIORITY_LEVEL)*/ // If you want to change it later...
+/*.setPriorityLevel(10)*/ // Or a custom one...
+.start();
+```
+### 3. Thread Group Management
 ```js
 const t1 = new Thread(() => {
   for (let i = 0; i < 3; i++) {
@@ -119,7 +129,7 @@ const group = new ThreadGroup(t1, t2)
 // Pause entire group after 1 second
 group.pauseAfter(1000);
 ```
-### 3. Error Handling
+### 4. Error Handling
 ```js
 const riskyThread = new Thread(function() {
   if (Math.random() > 0.5) throw new Error("Random failure!");
@@ -135,6 +145,76 @@ const riskyThread = new Thread(function() {
 ThreadExecutor.catch((err, thread) => {
   console.log(`Global handler caught error from ${thread.id}`);
 });
+```
+## Custom Priority Examples
+### 1. Default priorities
+```js
+const prioritizedthread = new Thread(function() {
+  Thread.sleep(1000); // Pause for 1 second
+  console.log("Beat");
+}/*, Thread.LOW_PRIORITY_LEVEL*/) // low priority set by default...
+.start();
+
+prioritizedthread.setPriorityLevel(Thread.MID_PRIORITY_LEVEL) // A better responsiveness rate...
+// Later...
+prioritizedthread.setPriorityLevel(Thread.HIGH_PRIORITY_LEVEL) // The default high priority level = 3, but it can be higher...
+```
+### 2. Custom Priority Tier System
+```js
+// Define custom priority levels
+const PRIORITY = {
+  BACKGROUND: 1,    // Lowest (default)
+  NORMAL: 3,        // Between MID and HIGH 
+  INTERACTIVE: 5,   // Higher than HIGH
+  CRITICAL: 10      // Emergency level
+};
+
+// Create threads with custom priorities
+const bgTask = new Thread(() => {
+  console.log("Background analytics");
+  Thread.sleep(2000);
+}, PRIORITY.BACKGROUND);
+
+const uiTask = new Thread(() => {
+  console.log("UI animation frame");
+}, PRIORITY.INTERACTIVE);
+
+const paymentTask = new Thread(() => {
+  console.log("Processing payment");
+}, PRIORITY.CRITICAL);
+
+// Start all
+ThreadGroup.of(bgTask, uiTask, paymentTask).start();
+```
+### 3. Dynamic Priority Adjustment
+```js
+const adaptiveThread = new Thread(function () {
+  let priority = 1;
+  
+  while (true) {
+    // Boost priority when important work arrives
+    if (hasUrgentWork()) {
+      this.priority = 5; // Dynamic change
+      yield processUrgentWork();
+      this.priority = 1; // Reset
+    }
+    
+    yield doBackgroundWork();
+  }
+}).start();
+```
+### 4. Priority-Based Throttling
+```js
+ThreadExecutor.catch((err, thread) => {
+  // Downgrade crashing threads
+  if (err instanceof CriticalError) {
+    thread.priority = Math.max(1, thread.priority - 2);
+    thread.start(); // Restart with lower priority
+  }
+});
+
+const sensitiveTask = new Thread(handleFinancials, 9)
+  .start();
 ```
 ## Advanced Generator Function Usage
 ### 1. Manual Yield Control
