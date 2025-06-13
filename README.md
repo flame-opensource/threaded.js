@@ -254,6 +254,7 @@ new Thread(function[, priority, id])
 - `paused` (Boolean) — Whether it is currently paused.
 - `stopped` (Boolean) — Whether the thread was stopped.
 - `running` (Boolean) — Whether it is currently active.
+- `done` (Boolean) — Whether the thread done executing.
 
 #### Error Handling
 - `catch(fn)` — Assign a thread-local error handler.
