@@ -268,7 +268,7 @@ const recyclable = new Thread(worker)
 ThreadExecutor.setBeatTime(16);
 
 new Thread(function() {
-  // With innerfunctionsisolation = true, this won't block
+  // With Thread.innerfunctionsisolation = true, this won't block
   function heavyCalculation() {
     let total = 0;
     for (let i = 0; i < 1000000; i++) {
