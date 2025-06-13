@@ -13,13 +13,22 @@ JavaScript with threads !
 threaded.js is a cooperative multitasking framework for JavaScript that enables simulated thread-like behavior using generator functions and a cooperative thread scheduler. It provides robust control over asynchronous flows using familiar threading concepts like sleep, pause, resume, stop, and thread grouping.
 ### Supported features (for now)
 * Cooperative execution & concurrency
-* Basic thread controls (start, stop, pause, resume, sleep, ...)
+* Basic thread controls (start, stop, pause, resume, sleep), and delayed ones (startAfter, stopAfter, pauseAfter, resumeAfter, sleepAfter)
+* Thread status tracking (started, paused, stopped, paused, running flags)
 * Thread execution priority levels support (Thread.LOW_PRIORITY_LEVEL, Thread.MID_PRIORITY_LEVEL, Thread.HIGH_PRIORITY_LEVEL, or custom value)
+* Thread function arguments (using setArgs(...args) method)
+* Custom thread generator function (just pass a custom generator function to the thread constructor instead of a normal thread and you good to go !), note : yielding is done by you :)
 * Thread grouping (using ThreadGroup class)
 * ThreadExecutor handler loop beat time control (using ThreadExecutor.setBeatTime(time in ms))
 * Adaptive ThreadExecutor handler loop beat time control (using ThreadExecutor.setBeatTime(ThreadExecutor.ADAPTIVE), set by default)
 * Custom thread error handling (using thread.catch(ex), threadgroup.catch(ex, thread) or ThreadExecutor.catch(ex, thread) for global error handling)
 * Custom Thread & ThreadGroup ids for easier debugging (using Thread constructor (func, prioritylevel, id) or using setId function in Thread & ThreadGroup) (ids are set automatically by default)
+* Thread inner functions isolation for better concurrency (set by flag Thread.innerfunctionsisolation, set to true by default)
+* Thread errors isolation, so it only thrown in the thread's catch event and not in a global scope (using thread.errorSilently(flag) method, disabled by default)
+* Execution progress track (using thread.stepsCount() method, returns how much steps got executed)
+* Thread recycling (a thread can be used and started multiple times)
+* Nested threads recycling (using Thread.innerThreadFor(outerThread, func, prioritylevel, id), useful when creating nested threads (thread inside a thread))
+* ThreadExecutor handling and looping status (using ThreadExecutor.handling() & ThreadExecutor.looping() methods, handling if its handling a thread & looping it the handler loop is running)
 ### Installation
 #### Browser
 Add the following scripts to your html :
@@ -41,12 +50,13 @@ const { Thread, ThreadExecutor, ThreadGroup, ThreadError } = require('threaded.m
 ```
 ### Usage examples
 ```js
-// Thread 1: normal thread
-const thread1 = new Thread(function () {
+// Thread 1: normal thread (threads functions accept arguments !)
+const thread1 = new Thread(function (msg) {
   console.log("Thread 1: step 1");
   Thread.sleep(500);
+  console.log(msg)
   console.log("Thread 1: step 2");
-}).start();
+}).setArgs("hello world").start();
 
 
 // Thread 2: thread with high priority
