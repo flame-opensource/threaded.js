@@ -24,24 +24,13 @@
 
 /* Version 1.0.1 */
 
-// For node.js compatibility
-let acornnodejs;
-let escodegennodejs;
-try {
-    acornnodejs = require('acorn');
-    acornnodejs.walk = require('acorn-walk');
-    escodegennodejs = require('escodegen');
-} catch (ex) {
-    // Ignored...
+export class ThreadedTools {
 }
+ThreadedTools.acorn = {parse: () => {}}
+ThreadedTools.walk = {full: () => {}, simple: () => {}}
+ThreadedTools.escodegen = {generate: () => {}}
 
-if (acornnodejs !== undefined && acornnodejs !== null &&
-    escodegennodejs !== undefined && escodegennodejs !== null) {
-        acorn = acornnodejs;
-        escodegen = escodegennodejs;
-}
-
-class Thread {
+export class Thread {
     constructor(func, prioritylevel, id) {
         if (Thread.count === undefined) {
             Thread.count = 0;
@@ -74,6 +63,7 @@ class Thread {
         this.__args__ = [];
         this.__result__ = null;
         this.__errorSilently__ = false;
+        this.done = false;
         this.started = false;
         this.running = false;
         this.stopped = false;
@@ -153,6 +143,7 @@ class Thread {
         this.__sleepingpriority__ = false;
         this.__resumingpriority__ = false;
         this.__result__ = null;
+        this.done = false;
         this.started = true;
         this.paused = false;
         this.stopped = false;
@@ -375,7 +366,7 @@ Thread.HIGH_PRIORITY_LEVEL = 3;
 
 Thread.innerfunctionsisolation = false;
 
-class ThreadExecutor {
+export class ThreadExecutor {
     static handleThreadQueue() {
         if (ThreadExecutor.queue === undefined) {
             return;
@@ -427,6 +418,7 @@ class ThreadExecutor {
             if (!(result instanceof Error) && result.done === true) {
                 ThreadExecutor.queue.splice(ThreadExecutor.queueIndex, 1);
                 thread.__result__ = result.value;
+                thread.done = true;
                 thread.stopped = true;
                 thread.running = false;
                 thread.__sleepingpriority__ = false;
@@ -590,14 +582,13 @@ class ThreadExecutor {
         if (ThreadExecutor.__isNativeFunction__(func)) throw new ThreadError("Can't execute native function \"" + functionSource + "\", the thread function has to be a normal function, try to wrap the function into a normal function instead...");
         
         // Parse the source into an AST
-        const ast = acorn.parse(functionSource, { ecmaVersion: 2024 });
+        const ast = ThreadedTools.acorn.parse(functionSource, { ecmaVersion: 2024 });
 
         let alreadyAGeneratorFunction = typeof func === 'function' &&
                                         func.constructor &&
                                         func.constructor.name === 'GeneratorFunction';
-        if (alreadyAGeneratorFunction) return func;
 
-        acorn.walk.full(ast, (node) => {
+        if (! alreadyAGeneratorFunction) ThreadedTools.walk.full(ast, (node) => {
             // Inject `yield` after each statement in function body or block
             let functionId = 0;
             if (
@@ -871,13 +862,13 @@ class ThreadExecutor {
             }
         });
 
-        acorn.walk.simple(ast, {
+        ThreadedTools.walk.simple(ast, {
             FunctionDeclaration(node) {
-                if (! node.generator) ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, true);
+                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator);
                 node.generator = true;
             },
             FunctionExpression(node) {
-                if (! node.generator) ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, true);
+                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator);
                 node.generator = true;
             },
             ArrowFunctionExpression(node) {
@@ -886,7 +877,7 @@ class ThreadExecutor {
                     ThreadExecutor.__wrapArrowFunctionInBlockStatement__(node);
                 }
 
-                if (! node.generator) ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, true);
+                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator);
                 node.type = 'FunctionExpression';
                 node.generator = true;
                 node.expression = false;
@@ -894,7 +885,7 @@ class ThreadExecutor {
         });
 
         // Generate code
-        let newCode = escodegen.generate(ast);
+        let newCode = ThreadedTools.escodegen.generate(ast);
 
         // Eval into an actual generator function
         let generatorFunc = eval(newCode);
@@ -986,7 +977,7 @@ class ThreadExecutor {
 
 ThreadExecutor.ADAPTIVE = -1;
 
-class ThreadGroup {
+export class ThreadGroup {
     constructor(...threads) {
         if (ThreadGroup.count === undefined) {
             ThreadGroup.count = 0;
@@ -1185,7 +1176,7 @@ class ThreadGroup {
     }
 }
 
-class ThreadError extends Error {
+export class ThreadError extends Error {
     constructor(message, thread) {
         super((thread instanceof Thread ? "error in thread " : "error in threadgroup ") + "\"" + thread.id + "\"" + ", details : " + message, message instanceof Error ? message : undefined);
     }
