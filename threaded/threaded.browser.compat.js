@@ -1,4 +1,4 @@
-import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'threadedjs';
+import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from './threaded.js';
 
 window.Thread = Thread;
 window.ThreadExecutor = ThreadExecutor;
