@@ -1,6 +1,6 @@
 {
   "name": "threaded.browser.min.js",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "threaded.js browser version library",
   "main": "threaded.browser.min.js",
   "repository": {
