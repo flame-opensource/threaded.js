@@ -18,7 +18,7 @@
   - [Thread Configurations and Utilities](#thread-configurations-and-utilities)
 - [Architecture](#architecture)
 - [Inner Function Isolation](#inner-function-isolation)
-- [Silent Mode](#silent-mode)
+- [Thread level errors isolation](#thread-level-errors-isolation)
 - [Custom Generator Functions](#custom-generator-functions)
 - [Contributing](#contributing)
 - [License](#license)
@@ -150,7 +150,7 @@ const riskyThread = new Thread(function() {
 .catch(err => {
   console.log("Thread failed:", err.message);
 })
-/*.errorSilently(true)*/ // If you don't want the thread errors to bubble up to group or global level
+/*.isolateErrors(true)*/ // If you don't want the thread errors to bubble up to group or global level
 .start();
 
 // Global error handler
@@ -455,6 +455,8 @@ All thread functions (non-generator) are parsed into Abstract Syntax Trees (AST)
 
 This means that you can pass regular-looking code, and `threaded.js` will automatically insert necessary `yield` points for cooperative scheduling. The transformation is skipped for functions already defined as generators.
 
+You can also reference external or inline functions, and `threaded.js` will transform them automatically unless they are native functions.
+
 ### Phase 2: Execution Scheduling
 The `ThreadExecutor` loop runs at a configurable beat interval (either fixed or adaptive). It scans all active threads and executes one step per eligible thread in each cycle.
 
@@ -469,7 +471,7 @@ This model enables deterministic, cooperative multitasking without blocking the 
 
 ## Inner Function Isolation
 
-When `Thread.innerfunctionsisolation` is enabled, any custom inner function that *can be* blocking (such as infinite loops or CPU-intensive routines) will be isolated and wrapped into a separate inner thread. This ensures the main scheduler loop remains unblocked, allowing all other threads to continue executing smoothly.
+When `Thread.innerfunctionsisolation` is enabled or `thread.isolateInnerFunctions(true)` is called, any custom inner function that *can be* blocking (such as infinite loops or CPU-intensive routines) will be isolated and wrapped into a separate inner thread. This ensures the main scheduler loop remains unblocked, allowing all other threads to continue executing smoothly.
 
 The following examples demonstrate how this transformation works:
 
@@ -488,7 +490,7 @@ function* () {
   try {
     let __thefunctionstepscount__ = 0;
     while (true) {
-      const inner = Thread.innerThreadFor(this, myfunc).setArgs(this.id).errorSilently(true).start();
+      const inner = Thread.innerThreadFor(this, myfunc).setArgs(this.id).isolateErrors(true).start();
       while (inner.running) yield __thefunctionstepscount__;
       let result = inner.result();
       if (result instanceof Error) throw new ThreadError(result, inner);
@@ -503,9 +505,9 @@ function* () {
 
 ---
 
-## Silent Mode
+## Thread level errors isolation
 
-When `.errorSilently(true)` is called on a thread:
+When `.isolateErrors(true)` is called on a thread:
 - Errors thrown in the thread are not propagated to the global or group-level catchers.
 - They are still returned by `.result()`.
 - You may still handle them locally with `.catch()` on the thread.
@@ -523,14 +525,41 @@ You may pass your own generator functions directly into the `Thread` constructor
 Example:
 ```js
 new Thread(function* () {
-  yield;
   console.log("step 1");
   yield;
   console.log("step 2");
 }).start();
 ```
 
-You can also reference external or inline functions, and `threaded.js` will transform them automatically unless they are native functions.
+### Warning
+#### Remember to `yield` control when calling thread controls in your own generator functions to avoid race problems...
+
+Example:
+```js
+new Thread(function* () {
+  console.log("step 1");
+  yield;
+  Thread.sleep(1000);
+  yield; // Yielding here is necessary
+  // and must be called directly after the thread control...
+  console.log("step 2");
+}).start();
+```
+
+#### And using delayed controls inside a custom thread generator function is highly not recommended...
+
+Example:
+```js
+new Thread(function* () {
+  console.log("step 1");
+  yield;
+  Thread.sleepAfter(1000, 1000);
+  // Sleeping here is not garenteed...
+  // Even when you yield control
+  // Unless you yield control at every step :)
+  console.log("step 2");
+}).start();
+```
 
 ---
 
