@@ -346,7 +346,7 @@ new Thread(function[, priority, id])
 - `stop()` — Terminates execution and resets thread state.
 - `pause()` — Temporarily halts execution.
 - `resume()` — Resumes from paused state.
-- `sleepAfter()` — Puts the thread into sleep state for temporarily amount of time.
+- `sleep()` — Puts the thread into sleep state for temporarily amount of time.
 
 #### Delayed Methods
 - `startAfter(delay)` — Starts the thread after a delay.
