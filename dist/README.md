@@ -346,12 +346,14 @@ new Thread(function[, priority, id])
 - `stop()` — Terminates execution and resets thread state.
 - `pause()` — Temporarily halts execution.
 - `resume()` — Resumes from paused state.
+- `sleepAfter()` — Puts the thread into sleep state for temporarily amount of time.
 
 #### Delayed Methods
-- `startAfter(ms)` — Starts the thread after a delay.
-- `pauseAfter(ms)` — Pauses the thread after a delay.
-- `resumeAfter(ms)` — Resumes the thread after a delay.
-- `stopAfter(ms)` — Stops the thread after a delay.
+- `startAfter(delay)` — Starts the thread after a delay.
+- `pauseAfter(delay)` — Pauses the thread after a delay.
+- `resumeAfter(delay)` — Resumes the thread after a delay.
+- `stopAfter(delay)` — Stops the thread after a delay.
+- `sleepAfter(delay, ms)` — Puts the thread into sleep state for temporarily amount of time after a delay.
 
 #### Configuration
 - `Thread.innerfuntionsisolation` — Isolates the functions that are running inside the threads (that can be blocking) into sub-threads or inner threads for a non-blocking execution.
