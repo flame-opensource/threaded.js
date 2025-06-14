@@ -455,6 +455,8 @@ All thread functions (non-generator) are parsed into Abstract Syntax Trees (AST)
 
 This means that you can pass regular-looking code, and `threaded.js` will automatically insert necessary `yield` points for cooperative scheduling. The transformation is skipped for functions already defined as generators.
 
+You can also reference external or inline functions, and `threaded.js` will transform them automatically unless they are native functions.
+
 ### Phase 2: Execution Scheduling
 The `ThreadExecutor` loop runs at a configurable beat interval (either fixed or adaptive). It scans all active threads and executes one step per eligible thread in each cycle.
 
@@ -523,14 +525,41 @@ You may pass your own generator functions directly into the `Thread` constructor
 Example:
 ```js
 new Thread(function* () {
-  yield;
   console.log("step 1");
   yield;
   console.log("step 2");
 }).start();
 ```
 
-You can also reference external or inline functions, and `threaded.js` will transform them automatically unless they are native functions.
+### Warning
+#### Remember to `yield` control when calling thread controls in your own generator functions to avoid race problems...
+
+Example:
+```js
+new Thread(function* () {
+  console.log("step 1");
+  yield;
+  Thread.sleep(1000);
+  yield; // Yielding here is necessary
+  // and must be called directly after the thread control...
+  console.log("step 2");
+}).start();
+```
+
+#### And using delayed controls inside a custom thread generator function is highly not recommended...
+
+Example:
+```js
+new Thread(function* () {
+  console.log("step 1");
+  yield;
+  Thread.sleepAfter(1000, 1000);
+  // Sleeping here is not garenteed...
+  // Even when you yield control
+  // Unless you yield control at every step :)
+  console.log("step 2");
+}).start();
+```
 
 ---
 
