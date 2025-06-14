@@ -22,7 +22,7 @@
 * SOFTWARE.
 */
 
-/* Version 1.0.1 */
+/* Version 1.1.0 */
 
 class ThreadedTools {
 }
@@ -31,12 +31,16 @@ ThreadedTools.walk = acorn.walk;
 ThreadedTools.escodegen = escodegen;
 
 class Thread {
-    constructor(func, prioritylevel, id) {
+    constructor(givenfunc, prioritylevel, id, innerfunctionsisolation) {
         if (Thread.count === undefined) {
             Thread.count = 0;
         }
         Thread.count++;
-        this.__generatorFunc__ = ThreadExecutor.__generatorFunc__(func);
+        this.__func__ = givenfunc;
+        this.innerfunctionsisolation = innerfunctionsisolation == undefined || innerfunctionsisolation === null ?
+                                       false :
+                                       innerfunctionsisolation;
+        this.__generatorFunc__ = ThreadExecutor.__generatorFunc__(givenfunc, this.innerfunctionsisolation);
         this.id = id === undefined ? ('anonymous thread n-' + Thread.count) : (id + ' (thread n-' + Thread.count + ')');
         if (ThreadExecutor.queue === undefined) {
             ThreadExecutor.queue = [];
@@ -70,7 +74,7 @@ class Thread {
         this.paused = false;
     }
 
-    static innerThreadFor(outerThread, func, prioritylevel, id) {
+    static innerThreadFor(outerThread, func, prioritylevel, id, innerfunctionsisolation) {
         if (Thread.__sharedinnerthreads__ === undefined) {
             Thread.__sharedinnerthreads__ = new Map();
         }
@@ -104,12 +108,32 @@ class Thread {
         return this;
     }
 
-    errorSilently(flag) {
+    isolateErrors(flag) {
         if (flag === undefined || flag === null) {
-            this.__errorSilently__ = false;
+            this.__isolateErrors__ = false;
         }
 
-        this.__errorSilently__ = flag;
+        this.__isolateErrors__ = flag;
+        return this;
+    }
+
+    setFunction(fn) {
+        if (! this.paused) this.pause();
+        this.__func__ = fn;
+        this.__generatorFunc__ = ThreadExecutor.__generatorFunc__(this.__func__, this.innerfunctionsisolation);
+        if (this.started) this.start();
+        return this;
+    }
+
+    isolateInnerFunctions(flag) {
+        let innerfunctionsisolation = flag;
+        if (innerfunctionsisolation === undefined || innerfunctionsisolation === null) {
+            innerfunctionsisolation = true; // if user just types isolateInnerFunctions()...
+        }
+        this.innerfunctionsisolation = innerfunctionsisolation;
+        if (! this.paused) this.pause();
+        this.__generatorFunc__ = ThreadExecutor.__generatorFunc__(this.__func__, innerfunctionsisolation);
+        if (this.started) this.start();
         return this;
     }
 
@@ -169,7 +193,7 @@ class Thread {
     static interrupt() {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.interrupt called outside a thread environment");
+            throw new ThreadError("Thread.interrupt called outside thread environment");
         }
 
         currentThread.interrupt();
@@ -184,7 +208,7 @@ class Thread {
     static interruptAfter(ms) {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.interruptAfter called outside a thread environment");
+            throw new ThreadError("Thread.interruptAfter called outside thread environment");
         }
 
         currentThread.interruptAfter(ms);
@@ -212,7 +236,7 @@ class Thread {
     static stop() {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.stop called outside a thread environment");
+            throw new ThreadError("Thread.stop called outside thread environment");
         }
 
         currentThread.stop();
@@ -226,7 +250,7 @@ class Thread {
     static stopAfter(ms) {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.stopAfter called outside a thread environment");
+            throw new ThreadError("Thread.stopAfter called outside thread environment");
         }
 
         currentThread.stopAfter(ms);
@@ -244,7 +268,7 @@ class Thread {
     static pause() {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.pause called outside a thread environment");
+            throw new ThreadError("Thread.pause called outside thread environment");
         }
 
         currentThread.pause();
@@ -258,7 +282,7 @@ class Thread {
     static pauseAfter(ms) {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.pauseAfter called outside a thread environment");
+            throw new ThreadError("Thread.pauseAfter called outside thread environment");
         }
 
         currentThread.pauseAfter(ms);
@@ -284,7 +308,7 @@ class Thread {
     static resume() {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.resume called outside a thread environment");
+            throw new ThreadError("Thread.resume called outside thread environment");
         }
 
         currentThread.resume();
@@ -298,7 +322,7 @@ class Thread {
     static resumeAfter(ms) {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.resumeAfter called outside a thread environment");
+            throw new ThreadError("Thread.resumeAfter called outside thread environment");
         }
 
         currentThread.resumeAfter(ms);
@@ -330,24 +354,24 @@ class Thread {
     static sleep(ms) {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.sleep called outside a thread environment");
+            throw new ThreadError("Thread.sleep called outside thread environment");
         }
 
         currentThread.sleep(ms);
     }
 
-    sleepAfter(ms) {
-        setTimeout(() => this.sleep(), ms);
+    sleepAfter(delay, ms) {
+        setTimeout(() => this.sleep(ms), delay);
         return this;
     }
 
-    static sleepAfter(ms) {
+    static sleepAfter(delay, ms) {
         const currentThread = ThreadExecutor.currentThread;
         if (currentThread === undefined || currentThread === null) {
-            throw new ThreadError("Thread.sleepAfter called outside a thread environment");
+            throw new ThreadError("Thread.sleepAfter called outside thread environment");
         }
 
-        currentThread.sleepAfter(ms);
+        currentThread.sleepAfter(delay, ms);
     }
 
     catch(exceptionFunc) {
@@ -382,6 +406,8 @@ class ThreadExecutor {
         ThreadExecutor.__timeSpentOutsideThreads__ = undefined;
 
         ThreadExecutor.queueIndex = 0;
+
+        ThreadExecutor.currentThread = null;
 
         ThreadExecutor.handlerLoop(false);
     }
@@ -576,31 +602,65 @@ class ThreadExecutor {
         }
     }
 
-    static __generatorFunc__(func) {
+    static __generatorFunc__(func, innerfunctionsisolation) {
         let functionSource = `(${func.toString()})`;
         if (functionSource === null) throw new ThreadError("Failed to retrieve the function source code");
         if (ThreadExecutor.__isNativeFunction__(func)) throw new ThreadError("Can't execute native function \"" + functionSource + "\", the thread function has to be a normal function, try to wrap the function into a normal function instead...");
         
         // Parse the source into an AST
-        const ast = ThreadedTools.acorn.parse(functionSource, { ecmaVersion: 2024 });
+        const ast = ThreadedTools.acorn.parse(functionSource, { ecmaVersion: 'latest' });
 
         let alreadyAGeneratorFunction = typeof func === 'function' &&
                                         func.constructor &&
                                         func.constructor.name === 'GeneratorFunction';
 
-        if (! alreadyAGeneratorFunction) ThreadedTools.walk.full(ast, (node) => {
+        if (! alreadyAGeneratorFunction) ThreadedTools.walk.fullAncestor(ast, (node, ancestors) => {
             // Inject `yield` after each statement in function body or block
             let functionId = 0;
             if (
                 node.type === 'BlockStatement'
             ) {
+                for (let i = ancestors.length - 1; i >= 0; i--) {
+                    const ancestor = ancestors[i];
+                    if (ancestor.type === 'FunctionDeclaration' ||
+                        ancestor.type === 'FunctionExpression' ||
+                        ancestor.type === 'ArrowFunctionExpression'
+                    ) {
+                        let functioncode = ThreadedTools.escodegen.generate(ancestor);
+                        let func = null;
+                        try {
+                            func = eval(`(${functioncode})`);
+                        } catch (ex) {
+                            // Then its not a generator function and its being processed...
+                        }
+
+                        let isFunctionGenerator = func === null ? false : typeof func === 'function' &&
+                                        func.constructor &&
+                                        func.constructor.name === 'GeneratorFunction';
+
+                        if (isFunctionGenerator) {
+                            return;
+                        } else if (ancestor.type === 'ArrowFunctionExpression') {
+                             ancestor.type = 'FunctionExpression';
+                             ancestor.id = null;
+                             ancestor.expression = undefined;
+
+                            if (node.body.type !== 'BlockStatement') {
+                                ThreadExecutor.__wrapArrowFunctionInBlockStatement__(ancestor);
+                            }
+                        }
+                    }
+                }
+
                 const newBody = [];
                 for (let i = 0; i < node.body.length; i++) {
                     const stmt = node.body[i];
 
-                    if (Thread.innerfunctionsisolation === true &&
+                    if ((Thread.innerfunctionsisolation === true || innerfunctionsisolation == true) &&
                         (stmt.type === 'VariableDeclaration' ||
-                        stmt.type === 'ExpressionStatement')) {
+                         stmt.type === 'ExpressionStatement' ||
+                         stmt.type === 'FunctionDeclaration' ||
+                         stmt.type === 'ArrowFunctionDeclaration')) {
                         const originalVarName = stmt.type === 'VariableDeclaration' ?
                             stmt.declarations[0].id.name :
                             null;
@@ -621,16 +681,14 @@ class ThreadExecutor {
                                     };
                                 }
                             }
-                            isNativeOrThreadFunction = ThreadExecutor.__isNativeOrThreadFunction__(eval('(' + escodegen.generate(callExpr) + ')'.replaceAll('this', 'Thread')));     
+                            isNativeOrThreadFunction = ThreadExecutor.__isNativeOrThreadFunction__(eval('(' + ThreadedTools.escodegen.generate(callExpr) + ')'));     
                             dontIsolateToThread = true;
                         } else {
                             functionCallee = callExpr.callee;
                             if (functionCallee !== undefined && functionCallee !== null) try {
-                                isNativeOrThreadFunction = ThreadExecutor.__isNativeOrThreadFunction__(eval(escodegen.generate(functionCallee).replaceAll('this', 'Thread')));
-                            } catch(ex) {
-                                if (!(ex instanceof ReferenceError)) {
-                                    throw ex;
-                                }
+                                isNativeOrThreadFunction = ThreadExecutor.__isNativeOrThreadFunction__(eval(ThreadedTools.escodegen.generate(functionCallee)));
+                            } catch (ex) {
+                                isNativeOrThreadFunction = false;
                             }
                             dontIsolateToThread = callExpr.type !== 'CallExpression';
                         }
@@ -660,7 +718,7 @@ class ThreadExecutor {
                             const threadVar = `__innerfunctionexecutor${++functionId}__`;
                             const tempVarName = `__innerfunctionexecutionresult${functionId}__`;
                             newBody.push(
-                               // const __innerfunctionexecutorN__ = new Thread(FUNCTIONAME).setArgs(...args).setId(this.id + ''s inner thread').errorSilently(true).start();
+                               // const __innerfunctionexecutorN__ = Thread.innerThreadFor(ThreadExecutor.currentThread, FUNCTIONAME).setArgs(...args).setId(this.id + ''s inner thread').isolateErrors(true).start();
                                {
                                     type: 'VariableDeclaration',
                                     kind: 'const',
@@ -693,8 +751,21 @@ class ThreadExecutor {
                                                                                 optional: false
                                                                             },
                                                                             arguments: [
-                                                                                { type: 'ThisExpression' },
-                                                                                functionCallee]
+                                                                                {
+                                                                                    type: "MemberExpression",
+                                                                                    object: {
+                                                                                        type: "Identifier",
+                                                                                        name: "ThreadExecutor"
+                                                                                    },
+                                                                                    property: {
+                                                                                        type: "Identifier",
+                                                                                        name: "currentThread"
+                                                                                    },
+                                                                                    computed: false,
+                                                                                    optional: false
+                                                                                },
+                                                                                functionCallee
+                                                                            ]
                                                                         },
                                                                         property: { type: 'Identifier', name: 'setId' },
                                                                         computed: false,
@@ -706,7 +777,19 @@ class ThreadExecutor {
                                                                             operator: '+',
                                                                             left: {
                                                                                 type: 'MemberExpression',
-                                                                                object: { type: 'ThisExpression' },
+                                                                                object: {
+                                                                                    type: "MemberExpression",
+                                                                                    object: {
+                                                                                        type: "Identifier",
+                                                                                        name: "ThreadExecutor"
+                                                                                    },
+                                                                                    property: {
+                                                                                        type: "Identifier",
+                                                                                        name: "currentThread"
+                                                                                    },
+                                                                                    computed: false,
+                                                                                    optional: false
+                                                                                },
                                                                                 property: { type: 'Identifier', name: 'id' },
                                                                                 computed: false,
                                                                                 optional: false
@@ -725,7 +808,7 @@ class ThreadExecutor {
                                                             },
                                                             arguments: callExpr.arguments
                                                         },
-                                                        property: { type: 'Identifier', name: 'errorSilently' },
+                                                        property: { type: 'Identifier', name: 'isolateErrors' },
                                                         computed: false,
                                                         optional: false
                                                     },
@@ -768,7 +851,7 @@ class ThreadExecutor {
                                     }
                                 },
                                 // let ORIGINALVARNAME = __innerfunctionexecutorN__.result();
-                                // Or ; for non retuning function
+                                // Or let __innerfunctionexecutionresultN__ = __innerfunctionexecutorN__.result(); for non retuning function
                                 {
                                     type: 'VariableDeclaration',
                                     kind: 'let',
@@ -864,11 +947,11 @@ class ThreadExecutor {
 
         ThreadedTools.walk.simple(ast, {
             FunctionDeclaration(node) {
-                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator);
+                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator, true);
                 node.generator = true;
             },
             FunctionExpression(node) {
-                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator);
+                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator, true);
                 node.generator = true;
             },
             ArrowFunctionExpression(node) {
@@ -877,7 +960,7 @@ class ThreadExecutor {
                     ThreadExecutor.__wrapArrowFunctionInBlockStatement__(node);
                 }
 
-                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator);
+                ThreadExecutor.__wrapFunctionBodyInTryCatch__(node, ! node.generator, true);
                 node.type = 'FunctionExpression';
                 node.generator = true;
                 node.expression = false;
@@ -894,7 +977,13 @@ class ThreadExecutor {
 
     static __isNativeFunction__(fn) {
         if (fn === undefined) return false;
-        return typeof fn === 'function' && /\{\s*\[native code\]\s*\}/.test(fn.toString());
+        let isNativeFunction = typeof fn === 'function' &&
+                               fn.toString().includes("[native code]") || fn.toString().includes("[wasm code]");
+        if (! isNativeFunction) {
+            // Deno case...
+            isNativeFunction = typeof fn === 'function' && /#\w+/.test(fn.toString());
+        }
+        return isNativeFunction;
     }
 
     static __isNativeOrThreadFunction__(fn) {
@@ -919,7 +1008,7 @@ class ThreadExecutor {
         }
     }
 
-    static __wrapFunctionBodyInTryCatch__(node, addfunctionstepscountvar) {
+    static __wrapFunctionBodyInTryCatch__(node, addfunctionstepscountvar, addcurrentthreadcheckline) {
         const originalBody = node.body.body;
 
         node.body.body = [
@@ -928,6 +1017,54 @@ class ThreadExecutor {
                 block: {
                     type: "BlockStatement",
                     body: [
+                        addcurrentthreadcheckline === true ? {
+                            type: 'IfStatement',
+                            test: {
+                                type: 'BinaryExpression',
+                                operator: '==',
+                                left: {
+                                    type: 'MemberExpression',
+                                    object: {
+                                        type: 'Identifier',
+                                        name: 'ThreadExecutor'
+                                    },
+                                    property: {
+                                        type: 'Identifier',
+                                        name: 'currentThread'
+                                    },
+                                    computed: false
+                                },
+                                right: {
+                                    type: 'Literal',
+                                    value: null,
+                                    raw: 'null'
+                                }
+                            },
+                            consequent: {
+                                type: 'BlockStatement',
+                                body: [
+                                    {
+                                        type: 'ThrowStatement',
+                                        argument: {
+                                            type: 'NewExpression',
+                                            callee: {
+                                                type: 'Identifier',
+                                                name: 'ThreadError'
+                                            },
+                                            arguments: [
+                                                {
+                                                    type: 'Literal',
+                                                    value: 'a thread function called outside thread environment',
+                                                    raw: '"a thread function called outside thread environment"'
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        } : {
+                            type: 'EmptyStatement'
+                        },
                         addfunctionstepscountvar === true ? {
                             type: 'VariableDeclaration',
                             declarations: [
@@ -940,7 +1077,7 @@ class ThreadExecutor {
                                 kind: 'let'
                         } : {
                                 type: 'EmptyStatement'
-                            },
+                        },
                         ...originalBody
                     ]
                 },
@@ -1178,13 +1315,13 @@ class ThreadGroup {
 
 class ThreadError extends Error {
     constructor(message, thread) {
-        super((thread instanceof Thread ? "error in thread " : "error in threadgroup ") + "\"" + thread.id + "\"" + ", details : " + message, message instanceof Error ? message : undefined);
+        super((thread === undefined ? "error in a thread function" : (thread instanceof Thread ? "error in thread " : "error in threadgroup ") + "\"" + thread.id + "\"") + ", details : " + message, message instanceof Error ? message : undefined);
     }
 }
 
 // For node.js compatibility
 try {
-    module.exports = { Thread, ThreadGroup, ThreadExecutor, ThreadError };
+    module.exports = { Thread, ThreadGroup, ThreadExecutor, ThreadError, ThreadedTools };
 } catch (ex) {
     // Ignored...
 }
