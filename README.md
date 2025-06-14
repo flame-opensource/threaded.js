@@ -469,7 +469,7 @@ This model enables deterministic, cooperative multitasking without blocking the 
 
 ## Inner Function Isolation
 
-When `Thread.innerfunctionsisolation` is enabled or thread.isolateInnerFunctions(true) is called, any custom inner function that *can be* blocking (such as infinite loops or CPU-intensive routines) will be isolated and wrapped into a separate inner thread. This ensures the main scheduler loop remains unblocked, allowing all other threads to continue executing smoothly.
+When `Thread.innerfunctionsisolation` is enabled or `thread.isolateInnerFunctions(true)` is called, any custom inner function that *can be* blocking (such as infinite loops or CPU-intensive routines) will be isolated and wrapped into a separate inner thread. This ensures the main scheduler loop remains unblocked, allowing all other threads to continue executing smoothly.
 
 The following examples demonstrate how this transformation works:
 
