@@ -4,7 +4,7 @@
 
 ---
 
-## Table of Contents
+## Table of Content
 - [Introduction](#introduction)
 - [Core Concepts](#core-concepts)
 - [Features](#features)
@@ -26,10 +26,12 @@
 ---
 
 ## Introduction
-threaded.js is a cooperative threading framework for JavaScript that simulates concurrency using generator functions. It allows developers to pause, resume, sleep, and prioritize functions as if they were true OS threads — all while staying in JavaScript’s single-threaded event loop.
+threaded.js is a cooperative threading framework for JavaScript that simulates concurrency using generator functions. It allows developers to pause, resume, sleep, and prioritize functions as if they were true threads — all while staying in JavaScript’s single-threaded event loop.
 
-## Core Concepts
-Cooperative Multitasking using generator functions : Threads yield control voluntarily after each step.
+## Core Concept
+JS's Single-threaded environment with cooperative execution.
+### How ?
+Cooperative Multitasking using generator functions : Threads yield control voluntarily after each executed step, creating the illusion of multitasking.
 
 ## Features
 * Cooperative execution model (yield-based)
@@ -37,14 +39,14 @@ Cooperative Multitasking using generator functions : Threads yield control volun
 * Delayed operations: startAfter, pauseAfter, etc.
 * Adaptive or fixed beat loop (ThreadExecutor.setBeatTime)
 * Thread prioritization: LOW, MID, HIGH, or custom
-* Thread recycling: restart any thread after it finishes
+* Thread recycling: restart any thread at any time even if its running, and change its function at any time using setFunction(func) method
 * Function argument passing (setArgs(...))
 * Nesting threads within other threads
 * Thread and group identifiers for easier debugging
 * Fine-grained error handling at thread, group, or global level
 * Execution progress tracking via stepsCount()
-* Inner-function isolation toggle (Thread.innerfunctionsisolation)
-* Silent error mode (errorSilently(true)
+* Inner-function isolation toggle (Thread.innerfunctionsisolation global flag or theThreadReference.isolateInnerFunctions(flag) if you want that setting to be thread specific)
+* Thread error isolation via isolateErrors(flag)
 * AST Transformation: Normal functions are transformed into generator functions at runtime using acorn, acorn-walk, and escodegen.
 * Thread Groups: Manage multiple threads together for batch operations.
 * Thread Executor: Global scheduler with beat-time-based loop and adaptive execution.
@@ -59,7 +61,7 @@ Add the following scripts to your html :
 <script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/browser/threaded.browser.min.js"></script>
 ```
 ### Node.js
-Install the following npm packages :
+Install the following npm packages into your project :
 ```
 npm install acorn acorn-walk escodegen threaded.min.js threaded.node.compat.min.js
 ```
@@ -278,7 +280,7 @@ const recyclable = new Thread(worker)
 ThreadExecutor.setBeatTime(16);
 
 new Thread(function() {
-  // With Thread.innerfunctionsisolation = true, this won't block
+  // With Thread.innerfunctionsisolation = true or thread.isolateInnerFunctions(true), this won't block
   function heavyCalculation() {
     let total = 0;
     for (let i = 0; i < 1000000; i++) {
@@ -289,7 +291,9 @@ new Thread(function() {
   
   const result = heavyCalculation();
   console.log("Result:", result);
-}).start();
+})
+/*.isolateInnerFunctions(true)*/
+.start();
 ```
 ### 3. Custom Yield Patterns
 ```js
@@ -321,6 +325,8 @@ function anOutsiderFunction() {
 }
 
 new Thread(anOutsiderFunction).start();
+new Thread(anOutsiderFunction).start();
+...
 ```
 
 ## API Reference
@@ -348,10 +354,13 @@ new Thread(function[, priority, id])
 - `stopAfter(ms)` — Stops the thread after a delay.
 
 #### Configuration
+- `Thread.innerfuntionsisolation` — Isolates the functions that are running inside the threads (that can be blocking) into sub-threads or inner threads for a non-blocking execution.
 - `setArgs(...args)` — Supplies arguments to be passed into the thread function.
 - `result()` — Returns the final value returned by the thread function (once the thread has completed). This is especially useful for retrieving computation outcomes, intermediate results, or passing data back from inner threads. If the thread function throws an error, `result()` will return an instance of `Error`.
 - `setId(id)` — Assigns a custom ID to the thread.
-- `errorSilently(flag)` — Prevents propagation to group/global if true.
+- `isolateErrors(flag)` — Prevents thread-specific errors from propagation to group/global if true.
+- `isolateInnerFunctions(flag)` — Same as `Thread.innerfuntionsisolation` but thread specific, automatically restarts the thread if started.
+- `setFunction(func)` — Change the thread's function at any given time, automatically restarts the thread if started.
 
 #### Observability
 - `stepsCount()` — Number of yield steps executed so far.
