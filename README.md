@@ -150,7 +150,7 @@ const riskyThread = new Thread(function() {
 .catch(err => {
   console.log("Thread failed:", err.message);
 })
-/*.errorSilently(true)*/ // If you don't want the thread errors to bubble up to group or global level
+/*.isolateErrors(true)*/ // If you don't want the thread errors to bubble up to group or global level
 .start();
 
 // Global error handler
@@ -488,7 +488,7 @@ function* () {
   try {
     let __thefunctionstepscount__ = 0;
     while (true) {
-      const inner = Thread.innerThreadFor(this, myfunc).setArgs(this.id).errorSilently(true).start();
+      const inner = Thread.innerThreadFor(this, myfunc).setArgs(this.id).isolateErrors(true).start();
       while (inner.running) yield __thefunctionstepscount__;
       let result = inner.result();
       if (result instanceof Error) throw new ThreadError(result, inner);
@@ -505,7 +505,7 @@ function* () {
 
 ## Silent Mode
 
-When `.errorSilently(true)` is called on a thread:
+When `.isolateErrors(true)` is called on a thread:
 - Errors thrown in the thread are not propagated to the global or group-level catchers.
 - They are still returned by `.result()`.
 - You may still handle them locally with `.catch()` on the thread.
