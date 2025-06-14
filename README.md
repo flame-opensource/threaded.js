@@ -18,7 +18,7 @@
   - [Thread Configurations and Utilities](#thread-configurations-and-utilities)
 - [Architecture](#architecture)
 - [Inner Function Isolation](#inner-function-isolation)
-- [Silent Mode](#silent-mode)
+- [Thread level errors isolation](#thread-level-errors-isolation)
 - [Custom Generator Functions](#custom-generator-functions)
 - [Contributing](#contributing)
 - [License](#license)
@@ -503,7 +503,7 @@ function* () {
 
 ---
 
-## Silent Mode
+## Thread level errors isolation
 
 When `.isolateErrors(true)` is called on a thread:
 - Errors thrown in the thread are not propagated to the global or group-level catchers.
