@@ -1,4 +1,4 @@
-import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from './threaded/threaded.module.js';
+import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/threaded.module.min.js';
 import { ThreadedDenoCompat } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/deno_compat/threaded.deno.compat.min.js';
 ThreadedDenoCompat.supportDeno(ThreadedTools);
 

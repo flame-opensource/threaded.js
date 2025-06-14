@@ -1,4 +1,4 @@
-const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('E:\\JS Projects\\threaded\\threaded\\threaded.module.js');
+const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('threaded.min.js');
 const { ThreadedNodeCompat } = require('threaded.node.compat.min.js');
 ThreadedNodeCompat.supportNode(ThreadedTools);
 
