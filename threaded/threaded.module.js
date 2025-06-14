@@ -22,12 +22,12 @@
 * SOFTWARE.
 */
 
-/* Version 1.1.0 */
+/* Version 1.1.1 */
 
 export class ThreadedTools {
 }
 ThreadedTools.acorn = {parse: () => {}}
-ThreadedTools.walk = {full: () => {}, simple: () => {}}
+ThreadedTools.walk = {fullAncestor: () => {}, simple: () => {}}
 ThreadedTools.escodegen = {generate: () => {}}
 
 export class Thread {
