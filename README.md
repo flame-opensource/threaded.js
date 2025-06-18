@@ -22,8 +22,8 @@
 - [Inner Function Isolation](#inner-function-isolation)
 - [Thread level errors isolation](#thread-level-errors-isolation)
 - [Custom Generator Functions](#custom-generator-functions)
-- [Contributing](#contributing)
 - [Support this project](#support-this-project)
+- [Contributing](#contributing)
 - [License](#license)
 
 ---
@@ -783,7 +783,7 @@ new Thread(function* () {
 
 If you find this library helpful, consider sponsoring it to support continued development:
 
-👉 [Buy Me a Coffee](https://buymeacoffee.com/flame.opensource)
+👉 [Buy Me a Coffee](coff.ee/flame.opensource)
 
 ---
 
