@@ -279,7 +279,7 @@ const paymentTask = new Thread(() => {
 }, PRIORITY.CRITICAL);
 
 // Start all
-ThreadGroup.of(bgTask, uiTask, paymentTask).start();
+new ThreadGroup(bgTask, uiTask, paymentTask).start();
 ```
 ### 3. Dynamic Priority Adjustment
 ```js
