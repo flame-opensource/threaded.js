@@ -1,6 +1,6 @@
 {
   "name": "threaded.node.compat.min.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "threaded.js node compatibility library",
   "main": "threaded.node.compat.min.js",
   "repository": {
@@ -8,9 +8,22 @@
     "url": "git+https://github.com/flame-opensource/threaded.js.git"
   },
   "keywords": [
-    "js", "JavaScript", "node", "node.js", "deno", "deno.js",
-    "thread", "threads", "threading", "multithreading",
-    "multitasking", "concurrency", "cooperative"
+    "js",
+    "JavaScript",
+    "esm",
+    "module",
+    "modular",
+    "node",
+    "node.js",
+    "deno",
+    "deno.js",
+    "thread",
+    "threads",
+    "threading",
+    "multithreading",
+    "multitasking",
+    "concurrency",
+    "cooperative"
   ],
   "author": "Flame <flame.opensource.contact@gmail.com>",
   "license": "MIT",
