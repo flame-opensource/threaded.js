@@ -303,7 +303,7 @@ const adaptiveThread = new Thread(function () {
 ThreadExecutor.catch((err, thread) => {
   // Downgrade crashing threads
   if (err instanceof CriticalError) {
-    thread.priority = Math.max(1, thread.priority - 2);
+    thread.setPriorityLevel(Math.max(1, thread.priority - 2));
     thread.start(); // Restart with lower priority
   }
 });
