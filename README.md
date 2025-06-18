@@ -284,14 +284,14 @@ new ThreadGroup(bgTask, uiTask, paymentTask).start();
 ### 3. Dynamic Priority Adjustment
 ```js
 const adaptiveThread = new Thread(function () {
-  let priority = 1;
+  this.setPriorityLevel(1);
   
   while (true) {
     // Boost priority when important work arrives
     if (hasUrgentWork()) {
-      this.priority = 5; // Dynamic change
+      this.setPriorityLevel(5); // Dynamic change
       processUrgentWork();
-      this.priority = 1; // Reset
+      this.setPriorityLevel(1); // Reset
     }
     
     doBackgroundWork();
