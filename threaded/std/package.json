@@ -1,0 +1,34 @@
+{
+  "name": "threaded.std.js",
+  "version": "1.1.6",
+  "description": "threaded.js standard version library",
+  "main": "threaded.std.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flame-opensource/threaded.js.git"
+  },
+  "keywords": [
+    "js",
+    "JavaScript",
+    "esm",
+    "module",
+    "modular",
+    "node",
+    "node.js",
+    "deno",
+    "deno.js",
+    "thread",
+    "threads",
+    "threading",
+    "multithreading",
+    "multitasking",
+    "concurrency",
+    "cooperative"
+  ],
+  "author": "Flame <flame.opensource.contact@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flame-opensource/threaded.js/issues"
+  },
+  "homepage": "https://github.com/flame-opensource/threaded.js#readme"
+}
