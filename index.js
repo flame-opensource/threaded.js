@@ -10,6 +10,14 @@ fetch('https://raw.githubusercontent.com/flame-opensource/threaded.js/main/READM
         const html = marked.parse(markdown, { renderer });
         document.body.innerHTML = DOMPurify.sanitize(html);
         Prism.highlightAll();
+
+        if (location.hash) {
+          const id = location.hash.slice(1);
+          requestAnimationFrame(() => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          });
+        }
     })
     .catch(err => {
         document.body.innerHTML = '<p style="color:red">Failed to load README.md from threaded.js</p>';
