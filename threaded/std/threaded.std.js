@@ -22,7 +22,7 @@
 * SOFTWARE.
 */
 
-/* Version 1.1.6 */
+/* Version 1.1.7 */
 
 class ThreadedTools {
     static workerSourceCode(generatorFunc) {
