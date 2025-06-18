@@ -28,6 +28,7 @@
   - [ThreadExecutor](#threadexecutor)
   - [Thread Configurations and Utilities](#thread-configurations-and-utilities)
 - [Architecture](#architecture)
+- [Thread joining](#thread-joining)
 - [Inner Function Isolation](#inner-function-isolation)
 - [Thread level errors isolation](#thread-level-errors-isolation)
 - [Custom Generator Functions](#custom-generator-functions)
