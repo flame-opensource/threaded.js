@@ -3,13 +3,17 @@
 **JavaScript with Threads !**
 
 
-### Official website
+## Official Repository
+[threaded.js Repository](https://github.com/flame-opensource/threaded.js)
+
+## Official Website
 [threaded.js Website](https://flame-opensource.github.io/threaded.js)
 
 ---
 
 ## Table of Content
-- [Official website](#official-website)
+- [Official Repository](#official-repository)
+- [Official Website](#official-website)
 - [Introduction](#introduction)
 - [Core Concept](#core-concept)
 - [Features](#features)
