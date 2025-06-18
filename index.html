@@ -1,9 +1,102 @@
-<!DOCTYPE html>
-<html>
-    <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/std/threaded.std.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/browser_compat/threaded.browser.compat.min.js"></script>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>threaded.js Website</title>
+    <style>
+    /* Nord Theme Colors */
+    :root {
+      --nord0:  #2e3440; /* Polar Night */
+      --nord1:  #3b4252;
+      --nord2:  #434c5e;
+      --nord3:  #4c566a;
+      --nord4:  #d8dee9; /* Snow Storm */
+      --nord5:  #e5e9f0;
+      --nord6:  #eceff4;
+      --nord7:  #8fbcbb; /* Frost */
+      --nord8:  #88c0d0;
+      --nord9:  #81a1c1;
+      --nord10: #5e81ac;
+      --nord11: #bf616a; /* Aurora */
+      --nord12: #d08770;
+      --nord13: #ebcb8b;
+      --nord14: #a3be8c;
+      --nord15: #b48ead;
+    }
+
+    body {
+      background: var(--nord0);
+      color: var(--nord4);
+      font-family: 'Segoe UI', sans-serif;
+      margin: 2rem;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--nord8);
+      border-bottom: 1px solid var(--nord3);
+      padding-bottom: 0.3em;
+    }
+
+    a {
+      color: var(--nord7);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      background: var(--nord1);
+      color: var(--nord13);
+      padding: 0.2em 0.4em;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    pre {
+      background: var(--nord1);
+      color: var(--nord5);
+      padding: 1em;
+      overflow-x: auto;
+      border-radius: 6px;
+      margin-top: 1em;
+    }
+
+    blockquote {
+      border-left: 4px solid var(--nord10);
+      padding-left: 1em;
+      color: var(--nord3);
+      font-style: italic;
+    }
+
+    ul, ol {
+      padding-left: 1.5em;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid var(--nord2);
+      margin: 2em 0;
+    }
+
+    #content {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    #loading {
+      text-align: center;
+      color: var(--nord3);
+      font-size: 1.2em;
+    }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
     <script src="index.js"></script>
 </html>
