@@ -1,8 +1,8 @@
 {
-  "name": "threaded.esm.compat.js",
+  "name": "threaded.esm.compat.min.js",
   "version": "1.0.0",
   "description": "threaded.js esm/deno compatibility library",
-  "main": "threaded.esm.compat.js",
+  "main": "threaded.esm.compat.min.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/flame-opensource/threaded.js.git"
