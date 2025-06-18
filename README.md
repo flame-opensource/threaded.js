@@ -690,7 +690,7 @@ And `thread.join(timeoutms)` will be replaced with :
     clearTimeout(__jointimeoutN__);
 ```
 Using the AST processor only inside a thread environment (inside a thread).
-Using it somewhere else will throw the error : `ThreadError: IsolatedThread.join method can't be called outside thread environment`
+Using it somewhere else will throw the error : `ThreadError: Thread.join or ThreadGroup.join or IsolatedThread.join method can't be called outside thread environment`
 
 ---
 
