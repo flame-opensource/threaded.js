@@ -1,8 +1,17 @@
+const acorn = require('acorn');
+const walk = require('acorn-walk');
+const escodegen = require('escodegen');
+const { Worker } = require('worker_threads');
+
 class ThreadedNodeCompat {
-    static supportNode(ThreadedTools) {
-        ThreadedTools.acorn = require('acorn');
-        ThreadedTools.walk = require('acorn-walk');
-        ThreadedTools.escodegen = require('escodegen');
+    static defaultSettings(ThreadedTools) {
+        ThreadedTools.ast_generator = acorn;
+        ThreadedTools.ast_walker = walk;
+        ThreadedTools.escodegenerator = escodegen;
+        ThreadedTools.isnodejs = true;
+        ThreadedTools.createNodeWorker = (workerCode) => {
+            return new Worker(workerCode, { eval: true });
+        }
     }
 }
 
