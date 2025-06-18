@@ -6,7 +6,7 @@
 
 ## Table of Content
 - [Introduction](#introduction)
-- [Core Concepts](#core-concepts)
+- [Core Concept](#core-concept)
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -23,6 +23,7 @@
 - [Thread level errors isolation](#thread-level-errors-isolation)
 - [Custom Generator Functions](#custom-generator-functions)
 - [Contributing](#contributing)
+- [Support this project](#support-this-project)
 - [License](#license)
 
 ---
@@ -47,6 +48,9 @@ Cooperative Multitasking using generator functions : Threads yield control volun
 * Thread and group identifiers for easier debugging
 * Fine-grained error handling at thread, group, or global level
 * Execution progress tracking via stepsCount()
+* Thread & ThreadGroup joining via `Thread.join([timeout])` & `ThreadGroup.join([timeout])` methods
+* Simple tasks chaining & branching via `ThreadTask` class
+* True parallelism via `IsolatedThread` class
 * Inner-function isolation toggle (Thread.innerfunctionsisolation global flag or theThreadReference.isolateInnerFunctions(flag) if you want that setting to be thread specific)
 * Thread error isolation via isolateErrors(flag)
 * AST Transformation: Normal functions are transformed into generator functions at runtime using acorn, acorn-walk, and escodegen.
@@ -78,7 +82,7 @@ const {
   IsolatedThread,
   ThreadError,
   ThreadedTools
-} = require('threaded.module.min.js');
+} = require('threaded.min.js');
 const {
   ThreadedNodeCompat
 } = require('threaded.node.compat.min.js');
@@ -449,7 +453,7 @@ ThreadTask.run(() => console.log("step 1")) // indicates new task creation, firs
     .start(false, 1000); // Delayed startup & delay between each task
 ```
 ## IsolatedThread
-Leveraging WebWorkers across multiple JS environments & dynamic creation, IsolatedThread can run tasks on their own REAL threads, achieving true parallel execution and execution efficiency...
+Leveraging WebWorkers across multiple JS environments & dynamic creation, IsolatedThread can run tasks on their own REAL threads, achieving true parallelism and execution efficiency...
 ```js
 // Just like a normal thread...
 // And threaded.js takes care of everything...
@@ -775,11 +779,11 @@ new Thread(function* () {
 
 ---
 
-## ❤️ Support this project
+## Support this project
 
 If you find this library helpful, consider sponsoring it to support continued development:
 
-👉 [Sponsor me on GitHub](https://github.com/sponsors/flame-opensource)
+👉 [Buy Me a Coffee](https://buymeacoffee.com/flame.opensource)
 
 ---
 
