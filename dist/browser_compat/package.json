@@ -1,0 +1,41 @@
+{
+  "name": "threaded.browser.compat.min.js",
+  "version": "1.0.0",
+  "description": "threaded.js browser compatibility library",
+  "main": "threaded.browser.compat.min.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flame-opensource/threaded.js.git"
+  },
+  "keywords": [
+    "js",
+    "JavaScript",
+    "esm",
+    "module",
+    "modular",
+    "node",
+    "node.js",
+    "deno",
+    "deno.js",
+    "thread",
+    "threads",
+    "threading",
+    "multithreading",
+    "multitasking",
+    "concurrency",
+    "cooperative"
+  ],
+  "author": "Flame <flame.opensource.contact@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/flame-opensource/threaded.js/issues"
+  },
+  "homepage": "https://github.com/flame-opensource/threaded.js#readme",
+  "dependencies": {
+    "acorn": "^8.15.0",
+    "acorn-walk": "^8.3.4",
+    "escodegen": "^2.1.0",
+    "threaded.js": "^1.0.2",
+    "threaded.node.compat.js": "^1.0.0"
+  }
+}
