@@ -1,19 +1,34 @@
-import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/threaded.module.min.js';
-import { ThreadedDenoCompat } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/deno_compat/threaded.deno.compat.min.js';
-ThreadedDenoCompat.supportDeno(ThreadedTools);
+import {
+  Thread,
+  ThreadExecutor,
+  ThreadGroup,
+  IsolatedThread,
+  ThreadTask,
+  ThreadError,
+  ThreadedTools
+} from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/threaded.module.min.js';
+import {
+  ThreadedEsmCompat
+} from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/esm_compat/threaded.esm.compat.min.js';
+ThreadedEsmCompat.defaultSettings(ThreadedTools);
 
-Thread.innerfunctionsisolation = true;
+ThreadTask.run(() => console.log("step 1")) // indicates new task creation
+    .then(() => console.log("step 2"))
+    .then(() => console.log("step 3"))
+    .then(() => console.log("step 4"))
+    .then(() => console.log("step 5"))
+    .then(() => console.log("step 6"))
+    .atonce() // a task fork
+    .setId("my task")
+    .startAfter(3000, false, 1000)
+    .chained() // a task fork
+    .setId("my task 2")
+    .start(false, 1000)
+    .run(() => console.log("step 7")) // indicates new task creation
+    .then(() => console.log("step 8"))
+    .then(() => console.log("step 9"))
+    .atonce() // a task fork
+    .isolated() // isolated threads
+    .start(false, 1000);
 
-new Thread(function (name) {
-  (function* (a) {
-      console.log(a)
-      console.log(a)
-      console.log(a)
-  })("hello")
-  console.log(`Hello ${name}, step 1`);
-  Thread.sleep(5000);
-  console.log("Step 2 complete");
-}).setArgs("Hamza")
-.catch((ex) => {
-  console.log(ex)
-}).isolateInnerFunctions().start();
+setInterval(() => console.log("from event loop"), 1000)

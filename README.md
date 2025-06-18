@@ -14,6 +14,8 @@
 - [API Reference](#api-reference)
   - [Thread](#thread)
   - [ThreadGroup](#threadgroup)
+  - [ThreadTask](#threadtask)
+  - [IsolatedThread](#isolatedthread)
   - [ThreadExecutor](#threadexecutor)
   - [Thread Configurations and Utilities](#thread-configurations-and-utilities)
 - [Architecture](#architecture)
@@ -37,7 +39,7 @@ Cooperative Multitasking using generator functions : Threads yield control volun
 * Cooperative execution model (yield-based)
 * Full control over threads: start, stop, pause, resume, sleep
 * Delayed operations: startAfter, pauseAfter, etc.
-* Adaptive or fixed beat loop (ThreadExecutor.setBeatTime)
+* Adaptive or fixed beat loop (ThreadExecutor.setBeatTime(ms))
 * Thread prioritization: LOW, MID, HIGH, or custom
 * Thread recycling: restart any thread at any time even if its running, and change its function at any time using setFunction(func) method
 * Function argument passing (setArgs(...))
@@ -58,7 +60,8 @@ Add the following scripts to your html :
 <script src="https://cdn.jsdelivr.net/npm/acorn@latest/dist/acorn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/acorn-walk@latest/dist/walk.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/escodegen-browser@latest/escodegen.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/browser/threaded.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/std/threaded.std.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/browser_compat/threaded.browser.compat.min.js"></script>
 ```
 ### Node.js
 Install the following npm packages into your project :
@@ -67,17 +70,37 @@ npm install acorn acorn-walk escodegen threaded.min.js threaded.node.compat.min.
 ```
 Then import threaded.js library into your project :
 ```js
-const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('threaded.min.js');
-const { ThreadedNodeCompat } = require('threaded.node.compat.min.js');
-ThreadedNodeCompat.supportNode(ThreadedTools);
+const { 
+  Thread,
+  ThreadGroup,
+  ThreadTask,
+  ThreadExecutor,
+  IsolatedThread,
+  ThreadError,
+  ThreadedTools
+} = require('threaded.min.js');
+const {
+  ThreadedNodeCompat
+} = require('threaded.node.compat.min.js');
+ThreadedNodeCompat.defaultSettings(ThreadedTools);
 ...
 ```
-### Deno
+### ESM / Deno
 Import threaded.js library into your project :
 ```js
-import { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/threaded.module.min.js';
-import { ThreadedDenoCompat } from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/deno_compat/threaded.deno.compat.min.js';
-ThreadedDenoCompat.supportDeno(ThreadedTools);
+import {
+  Thread,
+  ThreadExecutor,
+  ThreadGroup,
+  IsolatedThread,
+  ThreadTask,
+  ThreadError,
+  ThreadedTools
+} from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/threaded.module.min.js';
+import {
+  ThreadedEsmCompat
+} from 'https://cdn.jsdelivr.net/npm/threaded.js@latest/dist/esm_compat/threaded.esm.compat.min.js';
+ThreadedEsmCompat.defaultSettings(ThreadedTools);
 ...
 ```
 
@@ -87,7 +110,7 @@ const t = new Thread(function (name) {
   console.log(`Hello ${name}, step 1`);
   Thread.sleep(1000);
   console.log("Step 2 complete");
-}).setArgs("Alice").start();
+}).setArgs("Hamza").start();
 ```
 
 ## Usage Examples
@@ -109,8 +132,10 @@ setTimeout(() => {
 ### 2. Thread with custom priority
 ```js
 const thread = new Thread(function() {
-  Thread.sleep(1000); // Pause for 1 second
-  console.log("Beat");
+  while (true) {
+      Thread.sleep(1000); // Pause for 1 second
+      console.log("Beat");
+  }
 }, Thread.MID_PRIORITY_LEVEL)
 /*.setPriorityLevel(Thread.HIGH_PRIORITY_LEVEL)*/ // If you want to change it later...
 /*.setPriorityLevel(10)*/ // Or a custom one...
@@ -158,6 +183,51 @@ ThreadExecutor.catch((err, thread) => {
   console.log(`Global handler caught error from ${thread.id}`);
 });
 ```
+## 5. Inner blocking functions isolation
+```js
+const nonBlockingThread = new Thread(function() {
+  heavyBlockingTask();
+  return "Done";
+})
+.isolateInnerFunctions(true) // Will run inner functions (heavyBlockingTask) into their own inner threads to avoid blocking...
+.start();
+```
+## 6. Threads joining
+```js
+const t1 = new Thread(() => {
+  for (let i = 0; i < 3; i++) {
+    console.log("Thread 1 step", i);
+    Thread.sleep(300);
+  }
+});
+
+const t2 = new Thread(() => {
+  t1.join(); // Waits until t1 finishes execution...
+  for (let i = 0; i < 3; i++) {
+    console.log("Thread 2 step", i);
+    Thread.sleep(500);
+  }
+});
+
+const t3 = new Thread(() => {
+  t2.join(3000); // Waits until t2 finishes execution with timeout...
+  // If 3000 ms passes and t2 still executing continue...
+  ...
+});
+
+const t4 = new Thread(() => {
+  new ThreadGroup(t1, t2, t3).join(10000); // Waits until the threadgroup finishes execution with timeout...
+  // If 10000 ms passes and the threadgroup still executing continue...
+  ...
+});
+
+t1.start();
+t2.start();
+t3.start();
+t4.startAfter(5000);
+...
+```
+
 ## Custom Priority Examples
 ### 1. Default priorities
 ```js
@@ -207,11 +277,11 @@ const adaptiveThread = new Thread(function () {
     // Boost priority when important work arrives
     if (hasUrgentWork()) {
       this.priority = 5; // Dynamic change
-      yield processUrgentWork();
+      processUrgentWork();
       this.priority = 1; // Reset
     }
     
-    yield doBackgroundWork();
+    doBackgroundWork();
   }
 }).start();
 ```
@@ -239,31 +309,44 @@ const preciseThread = new Thread(function* () {
     console.log(`Iteration ${i}`);
     yield; // Yield after each iteration
   }
+
+  // Making the outer function generator won't nesseccary makes the inner ones
+  // generator too...
+  function someGeneratorOperation() {
+    ...
+  }
   
-  const result = yield someGeneratorOperation(); // Can yield other generator functions
+  const result = someGeneratorOperation();
   console.log("result:", result);
-}).start();
+})
+/*.isolateInnerFunctions(true)*/ // To make someGeneratorOperation steppable
+// Or you can make it generator too... [function* someGeneratorOperation()...]
+// If you want to have control over yielding...
+.start();
 ```
 ### 2. Custom Generator Function with Thread Recycling
 ```js
 function* worker() {
   while (true) {
-    const job = yield getNextJob(); // Assume this yields
-    console.log("Processing job:", job);
-    yield processJob(job);
+    const job = getNextJob();
+    processJob(job);
+    validateJob(job);
+    yield; // Yield only after the 3 above tasks are all done
   }
 }
 
 const recyclable = new Thread(worker)
-  .catch(() => {
+  .catch((ex) => {
     console.log("Worker crashed - restarting");
     this.start(); // Re-start on error
   })
+  /*.isolateInnerFunctions(true)*/
   .start();
 ```
 ## More & more usage examples
 ### 1. Thread Recycling
 ```js
+// Will crash indefinitely...
 function worker() {
   throw Error("an error");
 }
@@ -328,6 +411,65 @@ new Thread(anOutsiderFunction).start();
 new Thread(anOutsiderFunction).start();
 ...
 ```
+### 5. Thread.this
+```js
+function anOutsiderFunction() {
+  // Since this function is executed inside the thread
+  // Thread can be accessed here safely
+  // Using the Thread.this keyword...
+  Thread.this.sleep(1000); // You can sleep...
+  console.log(Thread.this.id);
+}
+
+new Thread(anOutsiderFunction).start();
+...
+```
+## ThreadTask
+You have multiple tasks and you don't want to create multiple Thread objects everytime ?
+Using `ThreadTask` you can run your tasks chained or atonce fast just by typing run(...).then(...)...
+```js
+ThreadTask.run(() => console.log("step 1")) // indicates new task creation, first task
+    .then(() => console.log("step 2")) // Next task
+    .then(() => console.log("step 3")) // Next task
+    .then(() => console.log("step 4")) // Next task
+    .then(() => console.log("step 5")) // Next task
+    .then(() => console.log("step 6")) // Next task
+    .setId("the tasks") // General id
+    .atonce() // a task fork, run them one after the other
+    .setId("my tasks") // Branch id
+    .startAfter(3000, reverse = false, delayBetween = 1000) // Delayed startup & delay between each task
+    .chained() // another task fork, same previous tasks..., run them at once
+    .setId("my tasks 2") // Branch id
+    .start(reverse = true, delayBetween = 1500) // Starts immediately & delay between each task
+    .run(() => console.log("step 7")) // indicates new task creation, first task
+    .then(() => console.log("step 8")) // Next task
+    .then(() => console.log("step 9")) // Next task
+    .atonce() // a task fork
+    .isolated() // isolated threads, using IsolatedThread...
+    .start(false, 1000); // Delayed startup & delay between each task
+```
+## IsolatedThread
+Leveraging WebWorkers across multiple JS environments & dynamic creation, IsolatedThread can run tasks on their own REAL threads, achieving true parallel execution and execution efficiency...
+```js
+// Just like a normal thread...
+// And threaded.js takes care of everything...
+const it = new IsolatedThread((arg) => {
+  console.log("True parallelism in " + arg)
+}).setArgs('JavaScript').start();
+
+new Thread(() => {
+  it.join(); // Normal threads can join IsolatedThreads...
+  ...
+}).start();
+```
+#### NOTE: IsolatedThread runs in a seperate WebWorker means a seperate environment, that's why it's called "isolated".
+##### That means :
+```js
+const it = new IsolatedThread(() => {
+  // it.pause(); // Nope, it is an event loop variable can't be accessed here
+  IsolatedThread.this.pause(); // This is permissible
+}).start();
+```
 
 ## API Reference
 
@@ -347,6 +489,7 @@ new Thread(function[, priority, id])
 - `pause()` — Temporarily halts execution.
 - `resume()` — Resumes from paused state.
 - `sleep(ms)` — Puts the thread into sleep state for temporarily amount of time.
+- `join([ms])` — Blocks the calling thread until the called thread finishes executing (with timeout).
 
 #### Delayed Methods
 - `startAfter(delay)` — Starts the thread after a delay.
@@ -366,11 +509,15 @@ new Thread(function[, priority, id])
 
 #### Observability
 - `stepsCount()` — Number of yield steps executed so far.
-- `started` (Boolean) — Whether the thread was started.
-- `paused` (Boolean) — Whether it is currently paused.
-- `stopped` (Boolean) — Whether the thread was stopped.
-- `running` (Boolean) — Whether it is currently active.
-- `done` (Boolean) — Whether the thread done executing.
+- `isstarted()` — Whether the thread was started.
+- `ispaused()` — Whether it is currently paused.
+- `isstopped()` — Whether the thread was stopped.
+- `isrunning()` — Whether it is currently active.
+- `issleeping()` — Whether it is currently sleeping.
+- `isdone()` — Whether the thread done executing.
+- `onfinish(finishFunc)` — Assign a finish event handler to the thread.
+- `onyield(yieldFunc)` — Assign a yield event handler to the thread.
+- `Thread.count()` — Returns total count of all threads created so far.
 
 #### Error Handling
 - `catch(fn)` — Assign a thread-local error handler.
@@ -387,6 +534,7 @@ new ThreadGroup(...threads)
 
 #### Control Methods
 - `start()` / `pause()` / `resume()` / `stop()` — Controls all threads in the group simultaneously.
+- `join([ms])` — Blocks the calling thread until the called threadgroup finishes executing (with timeout).
 
 #### Modifiers
 - `add(thread)` — Adds a thread to the group.
@@ -397,6 +545,67 @@ new ThreadGroup(...threads)
 
 #### Debugging
 - `setId(id)` — Optional identifier for tracking.
+
+#### Observability
+- `length()` — Returns the size of the group (how much threads it owns).
+- `isstarted()` — Whether the thread was started.
+- `ispaused()` — Whether it is currently paused.
+- `isstopped()` — Whether the thread was stopped.
+- `isrunning()` — Whether it is currently active.
+- `issleeping()` — Whether it is currently sleeping.
+- `isdone()` — Whether the thread done executing.
+- `onfinish(finishFunc)` — Assign a finish event handler to the threadgroup.
+- `onyield(yieldFunc)` — Assign a yield event handler to the threadgroup.
+- `ThreadGroup.count()` — Returns total count of all groups created so far.
+
+---
+
+### IsolatedThread
+
+#### Constructor
+```js
+new IsolatedThread(function[, id])
+```
+- Accepts either a normal function (converted to generator) or a generator function.
+- `id`: Optional. String for debugging purposes.
+
+#### Control Methods
+- `start()` — Begins thread execution.
+- `stop()` — Terminates execution and resets thread state.
+- `pause()` — Temporarily halts execution.
+- `resume()` — Resumes from paused state.
+- `sleep(ms)` — Puts the thread into sleep state for temporarily amount of time.
+- `join([ms])` — Blocks the calling thread until the called thread finishes executing (with timeout).
+
+#### Delayed Methods
+- `startAfter(delay)` — Starts the thread after a delay.
+- `pauseAfter(delay)` — Pauses the thread after a delay.
+- `resumeAfter(delay)` — Resumes the thread after a delay.
+- `stopAfter(delay)` — Stops the thread after a delay.
+- `sleepAfter(delay, ms)` — Puts the thread into sleep state for temporarily amount of time after a delay.
+
+#### Configuration
+- `setArgs(...args)` — Supplies arguments to be passed into the thread function.
+- `result()` — Returns the final value returned by the thread function (once the thread has completed). This is especially useful for retrieving computation outcomes, intermediate results, or passing data back from inner threads. If the thread function throws an error, `result()` will return an instance of `Error`.
+- `setId(id)` — Assigns a custom ID to the thread.
+- `setFunction(func)` — Change the thread's function at any given time, automatically restarts the thread if started.
+
+#### Observability
+- `stepsCount()` — Number of yield steps executed so far.
+- `isstarted()` — Whether the thread was started.
+- `ispaused()` — Whether it is currently paused.
+- `isstopped()` — Whether the thread was stopped.
+- `isrunning()` — Whether it is currently active.
+- `issleeping()` — Whether it is currently sleeping.
+- `isdone()` — Whether the thread done executing.
+- `onfinish(finishFunc)` — Assign a finish event handler to the isolated thread.
+- `onyield(yieldFunc)` — Assign a yield event handler to the isolated thread.
+- `IsolatedThread.count()` — Returns total count of all isolated threads created so far.
+- `terminate()` — Terminates the called thread, will no longer be usable.
+##### NOTE : terminating process is done automatically when the isolated thread finishes executing, so its not recycable unlike a normal thread.
+
+#### Error Handling
+- `catch(fn)` — Assign a thread-local error handler.
 
 ---
 
@@ -427,27 +636,6 @@ However, two special thread states override this system:
 - **Slept threads** (those recovering from `Thread.sleep`) are always prioritized first to ensure accurate wake-up timing.
 - **Paused threads** (that were explicitly paused and resumed) come next, ensuring responsiveness and timely recovery.
 
-Following these, remaining threads are scheduled by priority value. Custom numeric levels can be used for more granular control if needed. in which threads are stepped during each executor beat. Threads with higher values are favored earlier in the scheduling cycle. You may also pass a custom numerical value beyond these three if finer control is needed.
-
-#### `Thread.innerfunctionsisolation`
-- Global flag to enable or disable isolation of inner functions into child threads.
-- **Set to `false` by default**.
-- When enabled (`true`), heavy blocking functions inside a thread (such as infinite loops or long-running computations) are automatically wrapped into separate inner threads.
-- This ensures such operations do not block the main thread scheduler, preserving responsiveness and allowing other threads to continue executing smoothly.
-- When disabled (`false`), all function calls run directly within the main thread’s context, which may cause performance issues if those functions block execution for extended periods. (`false`), all nested function calls are executed in the main thread context, which can lead to blocking if such functions are synchronous or long-running.
-
-#### `Thread.innerThreadFor(parentThread, func[, priority, id])`
-- Wraps `func` into a thread associated with `parentThread`.
-- Useful for thread recycling and safely invoking inner long-running or blocking functions.
-- Ensures isolated execution and result retrieval without blocking the main thread.
-- Enables better control over nested thread flows and error propagation.
-- Example:`func` into a thread associated with `parentThread`.
-- Ensures isolated execution and result retrieval.
-- Example:
-```js
-const child = Thread.innerThreadFor(this, func).start();
-```
-
 ## Architecture
 
 `threaded.js` operates in two main phases:
@@ -468,6 +656,28 @@ Execution order follows this hierarchy:
 3. All other threads, ordered by descending priority
 
 This model enables deterministic, cooperative multitasking without blocking the JavaScript event loop.
+
+---
+
+## Thread joining
+The design of joining can't be achieved just by looping until the thread finishes executing, that will block the entire event loop.
+Instead..., for efficiency `thread.join()` will be replaced with :
+```js
+    while (thread.isrunning()) {
+        yield __thefunctionstepscount__; // or just yield; for custom generator functions
+    }
+```
+And `thread.join(timeoutms)` will be replaced with :
+```js
+    let __isjointimeoutN__ = false;
+    let __jointimeoutN__ = setTimeout(function () { __isjointimeoutN__ = true; }, timeoutms)
+    while (thread.isrunning() && !__isjointimeoutN__) {
+        yield __thefunctionstepscount__; // or just yield; for custom generator functions
+    }
+    clearTimeout(__jointimeoutN__);
+```
+Using the AST processor only inside a thread environment (inside a thread).
+Using it somewhere else will throw the error : `ThreadError: IsolatedThread.join method can't be called outside thread environment`
 
 ---
 
@@ -562,6 +772,14 @@ new Thread(function* () {
   console.log("step 2");
 }).start();
 ```
+
+---
+
+## ❤️ Support this project
+
+If you find this library helpful, consider sponsoring it to support continued development:
+
+👉 [Sponsor me on GitHub](https://github.com/sponsors/flame-opensource)
 
 ---
 

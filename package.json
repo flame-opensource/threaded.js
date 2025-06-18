@@ -1,6 +1,6 @@
 {
   "name": "threaded.js",
-  "version": "1.1.0",
+  "version": "1.1.6",
   "description": "JavaScript with threads !",
   "main": "threaded/threaded.module.js",
   "repository": {
@@ -10,6 +10,9 @@
   "keywords": [
     "js",
     "JavaScript",
+    "esm",
+    "module",
+    "modular",
     "node",
     "node.js",
     "deno",
@@ -32,8 +35,8 @@
     "acorn": "^8.15.0",
     "acorn-walk": "^8.3.4",
     "escodegen": "^2.1.0",
-    "threaded.min.js": "^1.0.8",
+    "threaded.min.js": "^1.1.5",
     "threaded.module.min.js": "^1.0.2",
-    "threaded.node.compat.min.js": "^1.0.0"
+    "threaded.node.compat.min.js": "^1.0.1"
   }
 }

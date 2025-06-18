@@ -1,17 +1,34 @@
-const { Thread, ThreadExecutor, ThreadGroup, ThreadError, ThreadedTools } = require('threaded.min.js');
-const { ThreadedNodeCompat } = require('threaded.node.compat.min.js');
-ThreadedNodeCompat.supportNode(ThreadedTools);
+const { 
+    Thread,
+    ThreadGroup,
+    ThreadTask,
+    ThreadExecutor,
+    IsolatedThread,
+    ThreadError,
+    ThreadedTools
+} = require('threaded.min.js');
+const {
+    ThreadedNodeCompat
+} = require('threaded.node.compat.min.js');
+ThreadedNodeCompat.defaultSettings(ThreadedTools);
 
-new Thread(function (name) {
-  (function* (a) {
-      console.log(a)
-      console.log(a)
-      console.log(a)
-  })("hello")
-  console.log(`Hello ${name}, step 1`);
-  Thread.sleep(5000);
-  console.log("Step 2 complete");
-}).setArgs("Hamza")
-.catch((ex) => {
-  console.log(ex)
-}).isolateInnerFunctions().start();
+ThreadTask.run(() => console.log("step 1")) // indicates new task creation
+    .then(() => console.log("step 2"))
+    .then(() => console.log("step 3"))
+    .then(() => console.log("step 4"))
+    .then(() => console.log("step 5"))
+    .then(() => console.log("step 6"))
+    .atonce() // a task fork
+    .setId("my task")
+    .startAfter(3000, false, 1000)
+    .chained() // a task fork
+    .setId("my task 2")
+    .start(false, 1000)
+    .run(() => console.log("step 7")) // indicates new task creation
+    .then(() => console.log("step 8"))
+    .then(() => console.log("step 9"))
+    .atonce() // a task fork
+    .isolated() // isolated threads
+    .start(false, 1000);
+
+setInterval(() => console.log("from event loop"), 1000)
