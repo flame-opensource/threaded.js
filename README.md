@@ -783,7 +783,7 @@ new Thread(function* () {
 
 If you find this library helpful, consider sponsoring it to support continued development:
 
-👉 [Buy Me a Coffee](coff.ee/flame.opensource)
+👉 [Buy Me a Coffee](https://coff.ee/flame.opensource)
 
 ---
 
