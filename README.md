@@ -4,7 +4,7 @@
 
 
 ### Official website
-`https://flame-opensource.github.io/threaded.js`
+[threaded.js Website](https://flame-opensource.github.io/threaded.js)
 
 ---
 
