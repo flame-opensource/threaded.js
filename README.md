@@ -1,7 +1,5 @@
 # threaded.js
 
-![liberapay stats](https://img.shields.io/liberapay/patrons/flame.opensource.svg?logo=liberapay)
-
 **JavaScript with Threads !**
 
 
@@ -823,6 +821,8 @@ new Thread(function* () {
 ---
 
 ## Support this project
+
+![liberapay stats](https://img.shields.io/liberapay/patrons/flame.opensource.svg?logo=liberapay)
 
 If you find this library helpful, consider sponsoring it to support continued development:
 
