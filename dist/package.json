@@ -1,6 +1,6 @@
 {
   "name": "threaded.min.js",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "JavaScript with threads !",
   "main": "threaded.module.min.js",
   "repository": {

@@ -609,11 +609,13 @@ new IsolatedThread(function[, id])
 
 #### Configuration
 - `setArgs(...args)` — Supplies arguments to be passed into the thread function.
-- `result()` — Returns the final value returned by the thread function (once the thread has completed). This is especially useful for retrieving computation outcomes, intermediate results, or passing data back from inner threads. If the thread function throws an error, `result()` will return an instance of `Error`.
 - `setId(id)` — Assigns a custom ID to the thread.
 - `setFunction(func)` — Change the thread's function at any given time, automatically restarts the thread if started.
+- `terminate()` — Terminates the called thread, will no longer be usable.
+##### NOTE : terminating process is done automatically when the isolated thread finishes executing, so its not recycable unlike a normal thread.
 
 #### Observability
+- `result()` — Returns the final value returned by the thread function (once the thread has completed). This is especially useful for retrieving computation outcomes, intermediate results, or passing data back from inner threads. If the thread function throws an error, `result()` will return an instance of `Error`.
 - `stepsCount()` — Number of yield steps executed so far.
 - `isstarted()` — Whether the thread was started.
 - `ispaused()` — Whether it is currently paused.
@@ -624,8 +626,6 @@ new IsolatedThread(function[, id])
 - `onfinish(finishFunc)` — Assign a finish event handler to the isolated thread.
 - `onyield(yieldFunc)` — Assign a yield event handler to the isolated thread.
 - `IsolatedThread.count()` — Returns total count of all isolated threads created so far.
-- `terminate()` — Terminates the called thread, will no longer be usable.
-##### NOTE : terminating process is done automatically when the isolated thread finishes executing, so its not recycable unlike a normal thread.
 
 #### Error Handling
 - `catch(fn)` — Assign a thread-local error handler.
@@ -756,10 +756,12 @@ function* () {
   try {
     let __thefunctionstepscount__ = 0;
     while (true) {
-      const inner = Thread.innerThreadFor(this, myfunc).setArgs(this.id).isolateErrors(true).start();
-      while (inner.running) yield __thefunctionstepscount__;
-      let result = inner.result();
-      if (result instanceof Error) throw new ThreadError(result, inner);
+      const __innerfunctionexecutorN__ = Thread.innerThreadFor(this, myfunc).setArgs(this.id).isolateErrors(true).start();
+      while (__innerfunctionexecutorN__.isrunning()) {
+        yield __thefunctionstepscount__;
+      }
+      let __innerfunctionexecutionresultN__ = __innerfunctionexecutorN__.result();
+      if (__innerfunctionexecutionresultN__ instanceof Error) throw new ThreadError(__innerfunctionexecutionresultN__, __innerfunctionexecutorN__);
       yield __thefunctionstepscount__++;
     }
   } catch (ex) {
