@@ -26,7 +26,7 @@
   - [ThreadTask](#threadtask)
   - [IsolatedThread](#isolatedthread)
   - [ThreadExecutor](#threadexecutor)
-  - [Thread Configurations and Utilities](#thread-configurations-and-utilities)
+  - [Thread Priorities](#thread-priorities)
 - [Architecture](#architecture)
 - [Thread joining](#thread-joining)
 - [Inner Function Isolation](#inner-function-isolation)
@@ -136,11 +136,11 @@ const thread = new Thread(function(name) {
   console.log("Middle step");
   Thread.sleep(500);
   return `Done processing ${name}`;
-}).setArgs("Alice").start();
+}).setArgs("Hamza").start();
 
 // Later check the result
 setTimeout(() => {
-  if (thread.done) console.log(thread.result()); // "Done processing Alice"
+  if (thread.isdone()) console.log(thread.result()); // "Done processing Alice"
 }, 2000);
 ```
 ### 2. Thread with custom priority
@@ -438,7 +438,7 @@ function anOutsiderFunction() {
 new Thread(anOutsiderFunction).start();
 ...
 ```
-## ThreadTask
+## 6. ThreadTask
 You have multiple tasks and you don't want to create multiple Thread objects everytime ?
 Using `ThreadTask` you can run your tasks chained or atonce fast just by typing run(...).then(...)...
 ```js
@@ -462,7 +462,7 @@ ThreadTask.run(() => console.log("step 1")) // indicates new task creation, firs
     .isolated() // isolated threads, using IsolatedThread...
     .start(false, 1000); // Delayed startup & delay between each task
 ```
-## IsolatedThread
+## 7. IsolatedThread
 Leveraging WebWorkers across multiple JS environments & dynamic creation, IsolatedThread can run tasks on their own REAL threads, achieving true parallelism and execution efficiency...
 ```js
 // Just like a normal thread...
@@ -623,6 +623,35 @@ new IsolatedThread(function[, id])
 
 ---
 
+### ThreadTask
+#### Configuration
+- `ThreadTask.run(fn: function)` — Creates a new ThreadTask instance and pushes the first function to the queue.
+- `then(fn: function)` — Adds a function to the internal task queue.
+- `setId(id: string)` — Sets a custom general identifier for the task queue.
+- `chained(priorityLevel?: number): BranchedTask` — Creates a branched task execution group that runs tasks in order.
+- `atonce(priorityLevel?: number): BranchedTask` — Creates a branched task execution group that runs all tasks simultaneously.
+- `group(priorityLevel?: number, id?: string, isolated?: boolean)` — Generates a ThreadGroup from the queued functions, with optional priority, id & threads isolation control.
+### BranchedTask Object
+Returned from chained() or atonce(). Supports the following:
+- `start(reverse?: boolean, delayBetween?: number)` — Start the branched task execution, with optional reverse and delay between tasks control.
+- `startAfter(delay: number, reverse?: boolean, delayBetween?: number)` — Start the branched task execution after a delay, with optional reverse and delay between tasks control.
+#### NOTE: BranchedTask Object methods returns the object itself, so you can safely branch another BranchedTask object from the original task within the branched task, that means branching can go indefinitely as much as you like...
+##### for example :
+```js
+ThreadTask
+    .run(...)
+    .then(...)
+    .then(...)
+    ... // more thens
+    .chained() // branch task n-1, chained
+    .setId(...) // still branch task n-1
+    ... // still branch task n-1
+    .atonce() // another branch task n-2 from our task
+    ... // branch task n-2
+    .run(...) // indicates a new task creation...
+```
+
+
 ### ThreadExecutor
 
 #### Beat Loop Control
@@ -637,9 +666,7 @@ new IsolatedThread(function[, id])
 
 ---
 
-### Thread Configurations and Utilities
-
-#### Thread Priority Levels
+### Thread Priorities
 - `Thread.LOW_PRIORITY_LEVEL = 1` — Lowest priority. These threads will be scheduled last after all higher-priority and resumed/slept threads have been handled.
 - `Thread.MID_PRIORITY_LEVEL = 2` — Intermediate level. Useful when balancing multiple threads with varying urgency. Balanced execution between low and high priority threads.
 - `Thread.HIGH_PRIORITY_LEVEL = 3` — Highest user-defined priority. These threads are scheduled before lower-priority ones (excluding resumed/slept threads which always take precedence).
