@@ -15,7 +15,7 @@
 - [threaded.node.compat.js main NPM package](https://www.npmjs.com/package/threaded.node.compat.js)
 - [threaded.node.compat.js minified NPM package](https://www.npmjs.com/package/threaded.node.compat.min.js)
 - [threaded.esm.compat.js main NPM package](https://www.npmjs.com/package/threaded.esm.compat.js)
-- [threaded.esm.compat.js minified NPM package](https://www.npmjs.com/package/threaded.node.compat.min.js)
+- [threaded.esm.compat.js minified NPM package](https://www.npmjs.com/package/threaded.esm.compat.min.js)
 
 ---
 
