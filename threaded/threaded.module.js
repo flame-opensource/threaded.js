@@ -22,7 +22,7 @@
 * SOFTWARE.
 */
 
-/* Version 1.2.0 */
+/* Version 1.2.1 */
 
 export class ThreadedTools {
     static workerSourceCode(generatorFunc) {
@@ -892,9 +892,7 @@ export class ThreadExecutor {
             }
             
             if (noExceptionFuncIsSet && !ThreadExecutor.currentThread.__isolateErrors__) {
-                if (! ThreadExecutor.currentThread.__isolateErrors__) {
-                    console.error(ex);
-                }
+                console.error(ex);
             }
         } else {
             console.error("Error thrown outside thread environment : ", ex);
@@ -1240,7 +1238,7 @@ export class ThreadExecutor {
                             stmt.expression;
 
                         let functionCallee = null;
-                        let isNativeOrThreadFunction = false;
+                        let isNativeOrLibraryFunction = false;
                         let dontIsolateToThread = false;
                         if (callExpr.type === 'ArrowFunctionExpression') {
                             for (const declarator of stmt.declarations) {
@@ -1255,12 +1253,12 @@ export class ThreadExecutor {
                             let generatedcode = null;
                             try {
                                 generatedcode = '(' + ThreadedTools.escodegenerator.generate(callExpr) + ')';
-                                isNativeOrThreadFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode));     
+                                isNativeOrLibraryFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode));     
                             } catch (ex) {
                                 try {
-                                    isNativeOrThreadFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode.replace("this", "ThreadExecutor.currentThread")));
+                                    isNativeOrLibraryFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode.replace("this", "ThreadExecutor.currentThread")));
                                 } catch (ex2) {
-                                    isNativeOrThreadFunction = false;
+                                    isNativeOrLibraryFunction = false;
                                 }
                             }
                             dontIsolateToThread = true;
@@ -1269,18 +1267,18 @@ export class ThreadExecutor {
                             let generatedcode = null;
                             if (functionCallee !== undefined && functionCallee !== null) try {
                                 generatedcode = `(${ThreadedTools.escodegenerator.generate(functionCallee)})`;
-                                isNativeOrThreadFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode));
+                                isNativeOrLibraryFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode));
                             } catch (ex) {
                                 try {
-                                    isNativeOrThreadFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode.replaceAll("this", "Thread.this")));
+                                    isNativeOrLibraryFunction = ThreadExecutor.__isNativeOrLibraryFunction__(eval(generatedcode.replaceAll("this", "Thread.this")));
                                 } catch (ex2) {
-                                    isNativeOrThreadFunction = false;
+                                    isNativeOrLibraryFunction = false;
                                 }
                             }
                             dontIsolateToThread = callExpr.type !== 'CallExpression';
                         }
 
-                        if (isNativeOrThreadFunction || dontIsolateToThread) {
+                        if (isNativeOrLibraryFunction || dontIsolateToThread) {
                             if (!stmtisjoin) newBody.push(stmt);
                             if (!isFunctionGenerator) newBody.push({
                                 type: 'ExpressionStatement',
@@ -1672,7 +1670,8 @@ export class ThreadExecutor {
         const name = fn.name;
         if (!name) return false;
         return ThreadExecutor.__isNativeFunction__(fn) || Thread.prototype.hasOwnProperty(name) ||
-               ThreadExecutor.prototype.hasOwnProperty(name) || ThreadGroup.prototype.hasOwnProperty(name) ||
+               IsolatedThread.prototype.hasOwnProperty(name) || ThreadExecutor.prototype.hasOwnProperty(name) ||
+               ThreadGroup.prototype.hasOwnProperty(name) || ThreadTask.prototype.hasOwnProperty(name) ||
                ThreadError.prototype.hasOwnProperty(name);
     }
 

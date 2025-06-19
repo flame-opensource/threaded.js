@@ -1,6 +1,6 @@
 {
   "name": "threaded.js",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "JavaScript with threads !",
   "main": "threaded.module.js",
   "repository": {
