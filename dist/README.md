@@ -449,18 +449,18 @@ ThreadTask.run(() => console.log("step 1")) // indicates new task creation, firs
     .then(() => console.log("step 5")) // Next task
     .then(() => console.log("step 6")) // Next task
     .setId("the tasks") // General id
-    .atonce() // a task fork, run them one after the other
+    .atonce() // a task fork, run them at once
     .setId("my tasks") // Branch id
     .startAfter(3000, reverse = false, delayBetween = 1000) // Delayed startup & delay between each task
-    .chained() // another task fork, same previous tasks..., run them at once
+    .chained() // another task fork, same previous tasks..., run them one after the other
     .setId("my tasks 2") // Branch id
-    .start(reverse = true, delayBetween = 1500) // Starts immediately & delay between each task
+    .start(reverse = true, delayBetween = 1500) // Starts immediately from the last task to the first one (reversed) & delay between each task
     .run(() => console.log("step 7")) // indicates new task creation, first task
     .then(() => console.log("step 8")) // Next task
     .then(() => console.log("step 9")) // Next task
-    .atonce() // a task fork
-    .isolated() // isolated threads, using IsolatedThread...
-    .start(false, 1000); // Delayed startup & delay between each task
+    .atonce() // a task fork, run them at once
+    .isolated() // isolated threads, using IsolatedThread class...
+    .start(false, 1000); // Delay between each task
 ```
 ## 7. IsolatedThread
 Leveraging WebWorkers across multiple JS environments & dynamic creation, IsolatedThread can run tasks on their own REAL threads, achieving true parallelism and execution efficiency...
