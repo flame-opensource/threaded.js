@@ -835,7 +835,7 @@ new Thread(function* () {
 
 If you find this library helpful, consider sponsoring it to support continued development:
 
-![Donate using Liberapay](https://liberapay.com/assets/widgets/donate.svg)
+[![Donate using Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/flame.opensource)
 
 ---
 
