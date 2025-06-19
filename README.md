@@ -631,10 +631,14 @@ new IsolatedThread(function[, id])
 - `chained(priorityLevel?: number): BranchedTask` — Creates a branched task execution group that runs tasks in order.
 - `atonce(priorityLevel?: number): BranchedTask` — Creates a branched task execution group that runs all tasks simultaneously.
 - `group(priorityLevel?: number, id?: string, isolated?: boolean)` — Generates a ThreadGroup from the queued functions, with optional priority, id & threads isolation control.
+- `queue` — Returns the task queue as functions array.
 ### BranchedTask Object
 Returned from chained() or atonce(). Supports the following:
 - `start(reverse?: boolean, delayBetween?: number)` — Start the branched task execution, with optional reverse and delay between tasks control.
 - `startAfter(delay: number, reverse?: boolean, delayBetween?: number)` — Start the branched task execution after a delay, with optional reverse and delay between tasks control.
+- `setId(id: string)` — Set branch specific id.
+- `isolated(flag: boolean)` — Makes the task branch threads isolated or not (using `Thread` class or `IsolatedThread` class).
+- `chained(...)`, `atonce(...)`, `group(...)`, `queue` and `run(...)` — inherited from the original task.
 #### NOTE: BranchedTask Object methods returns the object itself, so you can safely branch another BranchedTask object from the original task within the branched task, that means branching can go indefinitely as much as you like...
 ##### for example :
 ```js
