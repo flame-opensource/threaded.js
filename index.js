@@ -9,7 +9,7 @@ fetch('https://raw.githubusercontent.com/flame-opensource/threaded.js/main/READM
 
         const html = marked.parse(markdown, { renderer });
         document.body.innerHTML = DOMPurify.sanitize(html);
-        Prism.highlightAll();
+        hljs.highlightAll();
 
         if (location.hash) {
           const id = location.hash.slice(1);

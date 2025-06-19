@@ -1,7 +1,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>threaded.js Website</title>
+  <title>JavaScript with threads !</title>
+    <!-- JetBrains Mono Font -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/nord.min.css">
+    
     <style>
     /* Nord Theme Colors */
     :root {
@@ -21,25 +25,28 @@
       --nord13: #ebcb8b;
       --nord14: #a3be8c;
       --nord15: #b48ead;
+      --norddark:  #222222;
     }
 
     body {
       background: var(--nord0);
       color: var(--nord4);
-      font-family: 'Segoe UI', sans-serif;
       margin: 2rem;
       line-height: 1.6;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     h1, h2, h3, h4, h5, h6 {
       color: var(--nord8);
       border-bottom: 1px solid var(--nord3);
       padding-bottom: 0.3em;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     a {
       color: var(--nord7);
       text-decoration: none;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     a:hover {
@@ -47,20 +54,29 @@
     }
 
     code {
-      background: var(--nord1);
+      background: var(---norddark);
       color: var(--nord13);
       padding: 0.2em 0.4em;
       border-radius: 4px;
-      font-family: monospace;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    code, pre, .token {
+      background: var(--norddark);
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      letter-spacing: 0.01em;
     }
 
     pre {
-      background: var(--nord1);
+      background: var(--norddark);
       color: var(--nord5);
       padding: 1em;
       overflow-x: auto;
       border-radius: 6px;
       margin-top: 1em;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     blockquote {
@@ -68,16 +84,25 @@
       padding-left: 1em;
       color: var(--nord3);
       font-style: italic;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     ul, ol {
       padding-left: 1.5em;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     hr {
       border: 0;
       border-top: 1px solid var(--nord2);
       margin: 2em 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .hljs-comment {
+      color: var(--nord8) !important; /* icy blue */
+      font-style: italic;
+      opacity: 0.5;
     }
 
     #content {
@@ -89,14 +114,13 @@
       text-align: center;
       color: var(--nord3);
       font-size: 1.2em;
+      font-family: 'JetBrains Mono', monospace;
     }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css" />
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-javascript.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="index.js"></script>
 </html>
