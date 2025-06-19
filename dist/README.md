@@ -48,22 +48,22 @@ Cooperative Multitasking using generator functions : Threads yield control volun
 
 ## Features
 * Cooperative execution model (yield-based)
-* Full control over threads: start, stop, pause, resume, sleep
-* Delayed operations: startAfter, pauseAfter, etc.
-* Adaptive or fixed beat loop (ThreadExecutor.setBeatTime(ms))
+* AST Transformation: Normal functions are transformed into generator functions at runtime using acorn, acorn-walk, and escodegen.
+* Full control over threads: `start`, `stop`, `pause`, `resume`, `sleep`
+* Delayed operations: `startAfter`, `pauseAfter`, etc.
+* Adaptive or fixed beat loop (`ThreadExecutor.setBeatTime(ms)`)
 * Thread prioritization: LOW, MID, HIGH, or custom
-* Thread recycling: restart any thread at any time even if its running, and change its function at any time using setFunction(func) method
-* Function argument passing (setArgs(...))
+* Thread recycling: restart any thread at any time even if its running, and change its function at any time using `setFunction(func)` method
+* Function argument passing (`setArgs(...)`)
 * Nesting threads within other threads
 * Thread and group identifiers for easier debugging
 * Fine-grained error handling at thread, group, or global level
-* Execution progress tracking via stepsCount()
+* Execution progress tracking via `stepsCount()` (not for custom generator functions)
 * Thread & ThreadGroup joining via `Thread.join([timeout])` & `ThreadGroup.join([timeout])` methods
 * Simple tasks chaining & branching via `ThreadTask` class
-* True parallelism via `IsolatedThread` class
-* Inner-function isolation toggle (Thread.innerfunctionsisolation global flag or theThreadReference.isolateInnerFunctions(flag) if you want that setting to be thread specific)
-* Thread error isolation via isolateErrors(flag)
-* AST Transformation: Normal functions are transformed into generator functions at runtime using acorn, acorn-walk, and escodegen.
+* True threads & true parallelism via `IsolatedThread` class
+* Inner-function isolation toggle (`Thread.innerfunctionsisolation` global flag or `thread.isolateInnerFunctions(flag)` if you want that setting to be thread specific)
+* Thread error isolation via `isolateErrors(flag)`
 * Thread Groups: Manage multiple threads together for batch operations.
 * Thread Executor: Global scheduler with beat-time-based loop and adaptive execution.
 
@@ -140,7 +140,7 @@ const thread = new Thread(function(name) {
 
 // Later check the result
 setTimeout(() => {
-  if (thread.isdone()) console.log(thread.result()); // "Done processing Alice"
+  if (thread.isdone()) console.log(thread.result()); // "Done processing Hamza"
 }, 2000);
 ```
 ### 2. Thread with custom priority
