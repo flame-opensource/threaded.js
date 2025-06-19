@@ -556,7 +556,7 @@ new ThreadGroup(...threads)
 - Accepts multiple `Thread` instances.
 
 #### Control Methods
-- `start()` / `pause()` / `resume()` / `stop()` — Controls all threads in the group simultaneously.
+- `start()` / `pause()` / `resume()` / `stop()` or `interrupt()` / `sleep(ms)` and `startAfter(delay)` / `pauseAfter(delay)` / `resumeAfter(delay)` / `stopAfter(delay)` or `interruptAfter(delay)` / `sleepAfter(delay, ms)` — Controls all threads in the group simultaneously.
 - `join([ms])` — Blocks the calling thread until the called threadgroup finishes executing (with timeout).
 
 #### Modifiers
